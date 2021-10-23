@@ -17,7 +17,7 @@ async function fetchDashboardData() {
       }
       throw response;
     })
-    .then(data => data.message)
+    .then(data => data.data)
     .catch(response => { 
       return response.json()
     })
@@ -32,22 +32,13 @@ export default function Dashboard({ setError, setSuccess }) {
       async function fetchData() {
         const response = await fetchDashboardData();
         if (response.isError){
-          // setError(response);
-        }else{
+          setError(response);
+        } else {
           const data = response;
-          console.log(data)
-          // setData(data);
+          setData(data);
         }
       }
       fetchData();
-      setData([{
-          "date": "22 Okt 2021",
-          "currency_code": "USD",
-          "to_myr": 0.1234,
-          "from_myr": 1234.123,
-          "rate_changed": 0.12,
-          "rate_is_increased": false,
-      }])
     }, [setData]);
     
     return (
