@@ -1,0 +1,17 @@
+#error-boundary-wrapper {
+    position: fixed;
+    left: 50%;
+    top: 40%;
+    transform: translate(-50%, -50%);
+}
+
+#error-boundary-header {
+    background-color: #F2DEDE;
+    color: #A94442;
+}
+
+#error-boundary-button {
+    border: 1px solid gainsboro;
+    color: #333333;
+    background: white;
+}

@@ -1,0 +1,9 @@
+.increase {
+    color: green;
+    display: inline-block;
+}
+
+.decrease {
+    color: red;
+    display: inline-block;
+}

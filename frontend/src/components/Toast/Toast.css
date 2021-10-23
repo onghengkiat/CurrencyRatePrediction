@@ -1,0 +1,23 @@
+#toast-error {
+    position: fixed;
+    z-index: 100;
+    bottom: 20px;
+    right: 20px;
+}
+
+#toast-error-header {
+    background-color: #F2DEDE;
+    color: #A94442;
+}
+
+#toast-success {
+    position: fixed;
+    z-index: 100;
+    bottom: 20px;
+    right: 20px;
+}
+
+#toast-success-header {
+    background-color: #def2e2;
+    color: #42a950;
+}

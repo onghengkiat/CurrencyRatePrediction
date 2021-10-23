@@ -1,0 +1,38 @@
+.section {
+    margin-top: 48px;
+    margin-bottom: 48px;
+    align-items: center;
+}
+
+#introduction {
+    margin-top: 40px;
+}
+
+.feature-card {
+    margin-top: 24px;
+}
+
+.feature-card:hover {
+    background-color: lightblue;
+    cursor:pointer;
+}
+
+.responsive {
+    max-width: 100%;
+    height: auto;
+}
+
+.footer-col > * {
+    padding-left: 30px;
+}
+
+.footer-col {
+    padding-top: 5%;
+}
+
+
+@media (max-width: 575.9px) {
+    #introduction, #introduction-image {
+        text-align: center;
+    }
+}
