@@ -9,7 +9,7 @@ import joblib
 from keras.models import Sequential
 from keras.layers import Dense, LSTM
 import os
-from constants import MODEL_SUFFIX, SCALAR_SUFFIX, GRAPH_SUFFIX, MODEL_SAVE_PATH
+from constants import MODEL_FILENAME, SCALAR_FILENAME, GRAPH_FILENAME, MODEL_SAVE_PATH
 
 class ModelTrainer():
 
@@ -48,9 +48,9 @@ class ModelTrainer():
     print("\n\n")
 
   def save(self):
-    model_filename = os.path.join(MODEL_SAVE_PATH, self.currency_code, MODEL_SUFFIX)
-    scaler_filename = os.path.join(MODEL_SAVE_PATH, self.currency_code, SCALAR_SUFFIX)
-    img_filename = os.path.join(MODEL_SAVE_PATH, self.currency_code, GRAPH_SUFFIX)
+    model_filename = os.path.join(MODEL_SAVE_PATH, self.currency_code, MODEL_FILENAME)
+    scaler_filename = os.path.join(MODEL_SAVE_PATH, self.currency_code, SCALAR_FILENAME)
+    img_filename = os.path.join(MODEL_SAVE_PATH, self.currency_code, GRAPH_FILENAME)
 
     self.model.save(model_filename, save_format="h5")
     joblib.dump(self.scaler, scaler_filename) 

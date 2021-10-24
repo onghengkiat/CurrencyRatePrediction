@@ -2,7 +2,7 @@ from app import app
 from flask import request, jsonify
 from app.util import cors_allow, missing_param_handler
 import pandas as pd
-from constants import DATA_FILENAME, MODEL_SUFFIX, SCALAR_SUFFIX, GRAPH_SUFFIX, MODEL_SAVE_PATH, WINDOW_SIZE
+from constants import DATA_FILENAME, MODEL_FILENAME, SCALAR_FILENAME, GRAPH_FILENAME, MODEL_SAVE_PATH, WINDOW_SIZE
 from operator import itemgetter
 from datetime import datetime, timedelta
 from tensorflow.keras.models import load_model
@@ -99,8 +99,8 @@ def get_dashboard():
             cur_date = cur_date + timedelta(days=1)
             cur_date_string = cur_date.strftime('%Y-%m-%d')
             for currency_code in currency_codes:
-                model = load_model(os.path.join(MODEL_SAVE_PATH, currency_code, MODEL_SUFFIX))
-                scaler = joblib.load(os.path.join(MODEL_SAVE_PATH, currency_code, SCALAR_SUFFIX))
+                model = load_model(os.path.join(MODEL_SAVE_PATH, currency_code, MODEL_FILENAME))
+                scaler = joblib.load(os.path.join(MODEL_SAVE_PATH, currency_code, SCALAR_FILENAME))
                 model_inputs = preprocess_data(prev_data[currency_code], scaler)
 
                 to_myr_predicted = model.predict(model_inputs)
