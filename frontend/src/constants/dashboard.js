@@ -2,14 +2,25 @@ export const columns = [
     {
         title: "Date",
         field: "date",
+        type: "date",
+        render: (rowData, renderType) => {
+            if (renderType === 'row') {
+                return <div>{rowData.date}</div>;
+            }
+            if (renderType === 'group') {
+                return rowData
+            }
+        }
     },
     {
         title: "Currency Code",
         field: "currency_code",
+        defaultGroupOrder: 0,
     },
     {
         title: "To MYR",
         field: "to_myr",
+        grouping: false,
         render: rowData => {
             if (rowData.rate_changed_to_myr === 0) {
                 return (
@@ -35,6 +46,7 @@ export const columns = [
     {
         title: "From MYR",
         field: "from_myr",
+        grouping: false,
         render: rowData => {
             if (rowData.rate_changed_from_myr === 0) {
                 return (
@@ -56,5 +68,9 @@ export const columns = [
                 );
             }
         }
+    },
+    {
+        title: "Prediction",
+        field: "is_prediction",
     },
 ]

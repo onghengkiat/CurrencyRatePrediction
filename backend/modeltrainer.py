@@ -8,6 +8,8 @@ from sklearn.preprocessing import MinMaxScaler
 import joblib
 from keras.models import Sequential
 from keras.layers import Dense, LSTM
+import os
+from constants import MODEL_SUFFIX, SCALAR_SUFFIX, GRAPH_SUFFIX, MODEL_SAVE_PATH
 
 class ModelTrainer():
 
@@ -46,10 +48,9 @@ class ModelTrainer():
     print("\n\n")
 
   def save(self):
-    file_path = "./model/" + self.currency_code + "/"
-    model_filename = file_path + "_model"
-    scaler_filename = file_path + "_scaler"
-    img_filename = file_path + "_graph.png"
+    model_filename = os.path.join(MODEL_SAVE_PATH, self.currency_code, MODEL_SUFFIX)
+    scaler_filename = os.path.join(MODEL_SAVE_PATH, self.currency_code, SCALAR_SUFFIX)
+    img_filename = os.path.join(MODEL_SAVE_PATH, self.currency_code, GRAPH_SUFFIX)
 
     self.model.save(model_filename, save_format="h5")
     joblib.dump(self.scaler, scaler_filename) 
@@ -134,8 +135,6 @@ class ModelTrainer():
     _y_pred = self.scaler.inverse_transform(_y_pred)
     _y_test = np.array(y_test).reshape(-1, 1)
     _y_test = self.scaler.inverse_transform(_y_test)
-    print(x_test)
-    print(_y_pred)
     print("Done Predicting.")
 
     print("Plotting Actual & Predict Graph")

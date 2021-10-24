@@ -19,7 +19,17 @@ async function fetchDashboardData() {
     })
     .then(data => data.data)
     .catch(response => { 
-      return response.json()
+      // case when backend server is working, and sent frontend the error message
+      if (response.isError) {
+        return response.json();
+      } else {
+        // case when backend server is not working fine and didn't send any useful info to frontend
+        return {
+          "isError": true,
+          "code": "Error",
+          "message": "Something wrong with the backend server",
+        }
+      }
     })
 }
 
@@ -47,6 +57,9 @@ export default function Dashboard({ setError, setSuccess }) {
         title="Currency Exchange Rate"
         icons={icons}
         columns={columns}
+        options={{
+          grouping: true
+        }}
       />
     );
 }

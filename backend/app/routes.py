@@ -2,7 +2,72 @@ from app import app
 from flask import request, jsonify
 from app.util import cors_allow, missing_param_handler
 import pandas as pd
-from constants import DATA_FILENAME
+from constants import DATA_FILENAME, MODEL_SUFFIX, SCALAR_SUFFIX, GRAPH_SUFFIX, MODEL_SAVE_PATH, WINDOW_SIZE
+from operator import itemgetter
+from datetime import datetime, timedelta
+from tensorflow.keras.models import load_model
+import joblib
+import os
+
+def transform_json(to_myr, date_string, currency_code, prev_data, is_prediction=False):
+    rate_changed_to_myr = 0
+    rate_is_increased_to_myr = True
+    rate_changed_from_myr = 0
+    rate_is_increased_from_myr = True
+    from_myr = round(1.0/to_myr, 4)
+
+    if prev_data.get(currency_code, None) is not None:
+        # getting the last data from the windows of data captured
+        last_data = prev_data[currency_code][-1]
+        rate_changed_to_myr = round( ((to_myr - last_data["to_myr"])/last_data["to_myr"]) * 100, 4)
+        if rate_changed_to_myr < 0:
+            rate_is_increased_to_myr = False
+            rate_changed_to_myr = round(-1.0 * rate_changed_to_myr, 4)
+
+        rate_changed_from_myr = round( ((from_myr - last_data["from_myr"])/last_data["from_myr"]) * 100, 4)
+        if rate_changed_from_myr < 0:
+            rate_is_increased_from_myr = False
+            rate_changed_from_myr = round(-1.0 * rate_changed_from_myr, 4)
+
+    return {
+        "date": date_string,
+        "currency_code": currency_code,
+        "to_myr": to_myr,
+        "from_myr": from_myr,
+        "rate_changed_to_myr": rate_changed_to_myr,
+        "rate_is_increased_to_myr": rate_is_increased_to_myr,
+        "rate_changed_from_myr": rate_changed_from_myr,
+        "rate_is_increased_from_myr": rate_is_increased_from_myr,
+        "is_prediction": is_prediction,
+    }
+
+def put_into_window(prev_data, cur_data, currency_code):
+    if prev_data.get(currency_code, None) is None:
+        prev_data[currency_code] = [cur_data]
+    else:
+        if len(prev_data[currency_code]) < WINDOW_SIZE:
+            prev_data[currency_code].append(cur_data)
+        else:
+            prev_data[currency_code] = prev_data[currency_code][1:]
+            prev_data[currency_code].append(cur_data)
+    return prev_data
+
+def preprocess_data(list_of_dict, scaler):
+    # [{
+    #     "date": datetime.strptime(row['date'], '%d %b %Y').strftime('%Y-%m-%d'),
+    #     "currency_code": currency_code,
+    #     "to_myr": to_myr,
+    #     "from_myr": from_myr,
+    #     "rate_changed_to_myr": rate_changed_to_myr,
+    #     "rate_is_increased_to_myr": rate_is_increased_to_myr,
+    #     "rate_changed_from_myr": rate_changed_from_myr,
+    #     "rate_is_increased_from_myr": rate_is_increased_from_myr,
+    # }, ...]
+    _model_input = []
+    for d in list_of_dict:
+        _model_input.append([d["to_myr"]])
+    _model_input = scaler.transform(_model_input)
+    return _model_input.reshape(_model_input.shape[0], _model_input.shape[1], 1)
 
 @app.route("/dashboard")
 @cors_allow
@@ -14,40 +79,43 @@ def get_dashboard():
         currency_codes = df.columns[1:]
         data = []
         prev_data = {}
+        cur_date = None
         for i, row in df.iterrows():
+            cur_date = datetime.strptime(row['date'], '%d %b %Y')
+            cur_date_string = cur_date.strftime('%Y-%m-%d')
             for currency_code in currency_codes:
                 
-                rate_changed_to_myr = 0
-                rate_is_increased_to_myr = True
-                rate_changed_from_myr = 0
-                rate_is_increased_from_myr = True
-                
-                to_myr = row[currency_code]
-                from_myr = round(1.0/to_myr, 4)
-                if prev_data.get(currency_code, None) is not None:
-                    rate_changed_to_myr = round( ((to_myr - prev_data[currency_code]["to_myr"])/prev_data[currency_code]["to_myr"]) * 100, 4)
-                    if rate_changed_to_myr < 0:
-                        rate_is_increased_to_myr = False
-                        rate_changed_to_myr = round(-1.0 * rate_changed_to_myr, 4)
+                cur_data = transform_json(row[currency_code], cur_date_string, currency_code, prev_data)
 
-                    rate_changed_from_myr = round( ((from_myr - prev_data[currency_code]["from_myr"])/prev_data[currency_code]["from_myr"]) * 100, 4)
-                    if rate_changed_from_myr < 0:
-                        rate_is_increased_from_myr = False
-                        rate_changed_from_myr = round(-1.0 * rate_changed_from_myr, 4)
-
-                cur_data = {
-                    "date": row['date'],
-                    "currency_code": currency_code,
-                    "to_myr": to_myr,
-                    "from_myr": from_myr,
-                    "rate_changed_to_myr": rate_changed_to_myr,
-                    "rate_is_increased_to_myr": rate_is_increased_to_myr,
-                    "rate_changed_from_myr": rate_changed_from_myr,
-                    "rate_is_increased_from_myr": rate_is_increased_from_myr,
-                }
-                prev_data[currency_code] = cur_data
-
+                # Track it in the window
+                prev_data = put_into_window(prev_data, cur_data, currency_code)
                 data.append(cur_data)
+
+        if cur_date is None:
+            return jsonify({"message": "Successful", "data": data}), 200
+
+        # Predict next day currency rate
+        for i in range(1):
+            cur_date = cur_date + timedelta(days=1)
+            cur_date_string = cur_date.strftime('%Y-%m-%d')
+            for currency_code in currency_codes:
+                model = load_model(os.path.join(MODEL_SAVE_PATH, currency_code, MODEL_SUFFIX))
+                scaler = joblib.load(os.path.join(MODEL_SAVE_PATH, currency_code, SCALAR_SUFFIX))
+                model_inputs = preprocess_data(prev_data[currency_code], scaler)
+
+                to_myr_predicted = model.predict(model_inputs)
+                to_myr_predicted = round(float(scaler.inverse_transform(to_myr_predicted)[0][0]), 4)
+
+                cur_data = transform_json(to_myr_predicted, cur_date_string, currency_code, prev_data, is_prediction=True)
+
+                # Track it in the window
+                prev_data = put_into_window(prev_data, cur_data, currency_code)
+                data.append(cur_data)
+                
+                
+        data.sort(key=itemgetter('date'), reverse=True)
+        data.sort(key=itemgetter('currency_code'))
         return jsonify({"message": "Successful", "data": data}), 200
-    except Exception:
+    except Exception as e:
+        print(e)
         return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
