@@ -33,13 +33,14 @@ async function fetchDashboardData() {
     })
 }
 
-export default function Dashboard({ setError, setSuccess }) {
+export default function Dashboard({ setError, setSuccess, setLoading }) {
     const [dashboardData, setData] = useState();
   
     // acts as component did mount
     // fetch the data
     useEffect( () => {
       async function fetchData() {
+        setLoading(true);
         const response = await fetchDashboardData();
         if (response.isError){
           setError(response);
@@ -47,9 +48,11 @@ export default function Dashboard({ setError, setSuccess }) {
           const data = response;
           setData(data);
         }
+        setLoading(false);
       }
       fetchData();
     }, [setData]);
+
     
     return (
       <MaterialTable
