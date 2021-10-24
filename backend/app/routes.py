@@ -1,5 +1,5 @@
 from app import app
-from flask import request, jsonify
+from flask import request, jsonify, send_file, make_response
 from app.util import cors_allow, missing_param_handler
 import pandas as pd
 from constants import DATA_FILENAME, MODEL_FILENAME, SCALAR_FILENAME, GRAPH_FILENAME, MODEL_SAVE_PATH, WINDOW_SIZE
@@ -116,6 +116,70 @@ def get_dashboard():
         data.sort(key=itemgetter('date'), reverse=True)
         data.sort(key=itemgetter('currency_code'))
         return jsonify({"message": "Successful", "data": data}), 200
+    except Exception as e:
+        print(e)
+        return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
+
+
+@app.route("/graph")
+@cors_allow
+@missing_param_handler
+def get_model_actual_predicted_graph():
+    currency_code = request.args.get('currency_code', None)
+    directory = os.path.join("." + MODEL_SAVE_PATH, currency_code, GRAPH_FILENAME)
+    try:
+        r = send_file(directory, as_attachment=False)
+    except Exception as e:
+        print(e)
+    return r
+
+
+@app.route("/statistic")
+@cors_allow
+@missing_param_handler
+def get_statistic():
+    try: 
+        currency_code = request.args.get('currency_code', None)
+        df = pd.read_csv(DATA_FILENAME, index_col=0)
+        df["date"] = pd.to_datetime(df["date"], format='%d %b %Y')
+        # remove the timezone
+        df["date"] = df["date"].dt.tz_localize(None)
+        # convert to datetime
+        df["date"] = df["date"].dt.to_pydatetime()
+        df = df[['date', currency_code]]
+
+        min_rate = df[currency_code][0]
+        min_date = df['date'][0].strftime('%d %b %Y')
+        max_rate = df[currency_code][0]
+        max_date = df['date'][0].strftime('%d %b %Y')
+
+        for i, row in df.iterrows():
+            if row[currency_code] <= min_rate:
+                min_rate = row[currency_code]
+                min_date = row['date'].strftime('%d %b %Y')
+            elif row[currency_code] >= max_rate:
+                max_rate = row[currency_code]
+                max_date = row['date'].strftime('%d %b %Y')
+        data = {
+            "min_rate": min_rate,
+            "min_date": min_date,
+            "max_rate": max_rate,
+            "max_date": max_date,
+        }
+        return jsonify({"message": "Successful", "data": data}), 200
+    except Exception as e:
+        print(e)
+        return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
+
+@app.route("/currencylist")
+@cors_allow
+@missing_param_handler
+def get_currency_list():
+    try: 
+        df = pd.read_csv(DATA_FILENAME, index_col=0)
+        # First column is date
+        currency_codes = df.columns[1:].values.tolist()
+        return jsonify({"message": "Successful", "data": currency_codes}), 200
     except Exception as e:
         print(e)
         return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400

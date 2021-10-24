@@ -1,0 +1,25 @@
+.bignumber-chart-card {
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+}
+
+.bignumber-chart-icon {
+    font-size: 100px;
+    color: white;
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    -ms-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+}
+
+.bignumber-chart-header {
+    color: white;
+    margin: 0px 10px 40px 20px;
+}
+
+.bignumber-chart-body {
+    font-size: 35px;
+    color: white;
+    margin: 20px;
+}

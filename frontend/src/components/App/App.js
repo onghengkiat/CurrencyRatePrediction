@@ -5,6 +5,7 @@ import Navbar from '../Navbar/Navbar';
 import Home from '../Home/Home';
 import Dashboard from '../Dashboard/Dashboard';
 import Spinner from '../Spinner/Spinner';
+import Statistics from '../Statistics/Statistics';
 
 import useError from '../../hooks/useError';
 import useSuccess from '../../hooks/useSuccess';
@@ -27,12 +28,12 @@ function App() {
 
           <Route path="/dashboard">
             <Navbar/>      
-            <Dashboard setError={ setError } setLoading={ setLoading } loading= {loading}/>
+            <Dashboard setError={ setError } setLoading={ setLoading }/>
           </Route>
 
-          <Route path="/model">
+          <Route path="/statistic">
             <Navbar/>      
-            <Home setError={ setError }/>
+            <Statistics setError={ setError } setLoading={ setLoading }/>
           </Route>
 
           <Route path="/">

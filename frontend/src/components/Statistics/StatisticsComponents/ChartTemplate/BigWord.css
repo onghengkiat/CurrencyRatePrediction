@@ -1,0 +1,24 @@
+.bigword-chart-card {
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+}
+
+.bigword-chart-icon {
+    font-size: 60px;
+    color: white;
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    -ms-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+}
+
+.bigword-chart-header {
+    color: #555555;
+    margin: 10px;
+}
+
+.bigword-chart-body {
+    color: black;
+    margin: 0px 10px 30px 10px;
+}

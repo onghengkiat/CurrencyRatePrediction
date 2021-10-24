@@ -24,7 +24,7 @@ export default function NavBar(){
                 <Nav className="mr-auto">
                     <Nav.Link className="navigation-bar" href="/">Home</Nav.Link>
                     <Nav.Link className="navigation-bar" href="/dashboard">Dashboard</Nav.Link>
-                    <Nav.Link className="navigation-bar" href="/model">Model</Nav.Link>
+                    <Nav.Link className="navigation-bar" href="/statistic">Statistics</Nav.Link>
                 </Nav>
 
             </Navbar.Collapse>
