@@ -176,7 +176,6 @@ export default function Statistics({ setError, setLoading }){
       }
       fetchData();
     }, [currencyCode]);
-
     
     return (
         <Container fluid>

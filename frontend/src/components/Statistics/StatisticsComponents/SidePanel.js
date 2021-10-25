@@ -26,7 +26,7 @@ export default function SidePanel({ currencyList, setCurrencyCode }){
                     }
                 </Form.Control>
             </Form.Group>
-            <Button type="submit">Apply Changes</Button>
+            <Button type="submit" className="responsive" id="side-panel-button">Apply Changes</Button>
         </Form>
     )
 }

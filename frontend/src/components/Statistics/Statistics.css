@@ -34,6 +34,7 @@
     background-color: #ECECEC;
     padding: 25px;
     margin-bottom: 10px;
+    margin-top: 10px;
 }
 
 #dashboard-title-icon {
@@ -64,6 +65,15 @@
 @media (max-width: 575.9px) {
     #side-panel-title {
         color: white;
-        font-size: 16px;
+        font-size: 14px;
+    }
+
+    #side-panel-title-container {
+        padding: 0px;
+    }
+    
+    #side-panel-button {
+        padding: 0px;
+        font-size: 12px;
     }
 }

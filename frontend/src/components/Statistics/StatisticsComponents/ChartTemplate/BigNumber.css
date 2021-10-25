@@ -3,7 +3,7 @@
 }
 
 .bignumber-chart-icon {
-    font-size: 100px;
+    font-size: 90px;
     color: white;
     margin: 0;
     position: absolute;
@@ -22,4 +22,19 @@
     font-size: 35px;
     color: white;
     margin: 20px;
+}
+
+@media (max-width: 575.9px) {
+    .bignumber-chart-icon {
+        font-size: 60px;
+    }
+
+    .bignumber-chart-body {
+        font-size: 20px;
+    }
+
+    .bignumber-chart-header {
+        color: white;
+        font-size: 16px;
+    }
 }
