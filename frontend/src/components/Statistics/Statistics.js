@@ -1,5 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import Container from 'react-bootstrap/Container';
+import { URL_PREFIX } from '../../constants/API';
 
 import './Statistics.css';
 import SidePanel from './StatisticsComponents/SidePanel';
@@ -8,7 +9,7 @@ import DatasetStatistics from './StatisticsComponents/DatasetStatistics';
 
 
 async function fetchActualPredGraph(currencyCode) {
-    return fetch(`/graph?currency_code=${currencyCode}`, {
+    return fetch(`${URL_PREFIX}graph?currency_code=${currencyCode}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -38,7 +39,7 @@ async function fetchActualPredGraph(currencyCode) {
 }
 
 async function fetchStatistics(currency_code) {
-  return fetch(`/statistic?currency_code=${currency_code}`, {
+  return fetch(`${URL_PREFIX}statistic?currency_code=${currency_code}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json'
@@ -67,7 +68,7 @@ async function fetchStatistics(currency_code) {
 }
 
 async function fetchCurrencyList() {
-    return fetch(`/currencylist`, {
+    return fetch(`${URL_PREFIX}currencylist`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'

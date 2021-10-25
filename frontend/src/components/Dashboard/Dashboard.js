@@ -1,11 +1,12 @@
 import { icons } from './TableIcons';
 import { columns } from '../../constants/dashboard';
+import { URL_PREFIX } from '../../constants/API';
 import MaterialTable from 'material-table';
 import React, { useEffect, useState } from 'react';
 import './Dashboard.css'
 
 async function fetchDashboardData() {
-    return fetch(`/dashboard`, {
+    return fetch(`${URL_PREFIX}dashboard`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'

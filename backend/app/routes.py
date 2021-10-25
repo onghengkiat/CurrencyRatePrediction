@@ -1,6 +1,6 @@
 from app import app
 from flask import request, jsonify, send_file, make_response
-from app.util import cors_allow, missing_param_handler
+from app.util import missing_param_handler
 import pandas as pd
 from constants import DATA_FILENAME, MODEL_FILENAME, SCALAR_FILENAME, GRAPH_FILENAME, MODEL_SAVE_PATH, WINDOW_SIZE
 from operator import itemgetter
@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from tensorflow.keras.models import load_model
 import joblib
 import os
+from flask_cors import cross_origin
 
 def transform_json(to_myr, date_string, currency_code, prev_data, is_prediction=False):
     rate_changed_to_myr = 0
@@ -70,7 +71,7 @@ def preprocess_data(list_of_dict, scaler):
     return _model_input.reshape(_model_input.shape[0], _model_input.shape[1], 1)
 
 @app.route("/dashboard")
-@cors_allow
+@cross_origin(origin='*')
 @missing_param_handler
 def get_dashboard():
     try: 
@@ -122,7 +123,7 @@ def get_dashboard():
 
 
 @app.route("/graph")
-@cors_allow
+@cross_origin(origin='*')
 @missing_param_handler
 def get_model_actual_predicted_graph():
     currency_code = request.args.get('currency_code', None)
@@ -135,7 +136,7 @@ def get_model_actual_predicted_graph():
 
 
 @app.route("/statistic")
-@cors_allow
+@cross_origin(origin='*')
 @missing_param_handler
 def get_statistic():
     try: 
@@ -172,7 +173,7 @@ def get_statistic():
         return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
 
 @app.route("/currencylist")
-@cors_allow
+@cross_origin(origin='*')
 @missing_param_handler
 def get_currency_list():
     try: 
