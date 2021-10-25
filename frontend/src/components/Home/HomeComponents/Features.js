@@ -22,12 +22,11 @@ export default function Features() {
                     <Col>
                         <Accordian>
                             <Card className="feature-card">
-                                <Accordian.Toggle as={Card.Header} eventKey="1">Future Prediction</Accordian.Toggle>
+                                <Accordian.Toggle as={Card.Header} eventKey="1">Predictive Modeling</Accordian.Toggle>
                                 <Accordian.Collapse eventKey="1">
                                     <Card.Body>
                                         <Card.Text>
-                                            Some quick example text to build on the card Header and make up the bulk of
-                                            the card's content.
+                                            Predictive modeling is a statistical technique using machine learning and data mining to predict and forecast likely future outcomes with the aid of historical and existing data
                                         </Card.Text>
                                     </Card.Body>
                                 </Accordian.Collapse>
@@ -42,8 +41,7 @@ export default function Features() {
                                 <Accordian.Collapse eventKey="2">
                                     <Card.Body>
                                         <Card.Text>
-                                            Some quick example text to build on the card Header and make up the bulk of
-                                            the card's content.
+                                            Model is evaluated and the performance evaluation is transparent to the users and displayed in the statistics section
                                         </Card.Text>
                                     </Card.Body>
                                 </Accordian.Collapse>
@@ -56,12 +54,11 @@ export default function Features() {
                     <Col>
                         <Accordian>
                             <Card className="feature-card">
-                                <Accordian.Toggle as={Card.Header} eventKey="3">Trend Visualization</Accordian.Toggle>
+                                <Accordian.Toggle as={Card.Header} eventKey="3">Data Analysis</Accordian.Toggle>
                                 <Accordian.Collapse eventKey="3">
                                     <Card.Body>
                                         <Card.Text>
-                                            Some quick example text to build on the card Header and make up the bulk of
-                                            the card's content.
+                                            Data is presented in different ways to provide more insightful visualizations of data and help in data analysis
                                         </Card.Text>
                                     </Card.Body>
                                 </Accordian.Collapse>
@@ -76,8 +73,7 @@ export default function Features() {
                                 <Accordian.Collapse eventKey="4">
                                     <Card.Body>
                                         <Card.Text>
-                                            Some quick example text to build on the card Header and make up the bulk of
-                                            the card's content.
+                                            Data is obtained by webscraping from the website built by a reliable organization which is Bank Negara Malaysia
                                         </Card.Text>
                                     </Card.Body>
                                 </Accordian.Collapse>

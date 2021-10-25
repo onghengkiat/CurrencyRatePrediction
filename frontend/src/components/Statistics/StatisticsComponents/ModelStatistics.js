@@ -5,6 +5,7 @@ import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
 import { SiProbot } from 'react-icons/si';
 
+
 export default function ModelStatistics({ pic }){
     return (
         <div>
@@ -19,7 +20,7 @@ export default function ModelStatistics({ pic }){
                     </Row>
                 </Container>
             </Row>
-            <Image alt='actual_vs_predicted' src={ pic } responsive/>
+            <Image alt='actual_vs_predicted' src={ pic } className="responsive"/>
         </div>
     );
 }
