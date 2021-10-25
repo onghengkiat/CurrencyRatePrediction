@@ -9,7 +9,7 @@ import DatasetStatistics from './StatisticsComponents/DatasetStatistics';
 
 
 async function fetchActualPredGraph(currencyCode) {
-    return fetch(`${URL_PREFIX}graph?currency_code=${currencyCode}`, {
+    return fetch(`${URL_PREFIX}graph/statistic?currency_code=${currencyCode}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -36,6 +36,36 @@ async function fetchActualPredGraph(currencyCode) {
         }
       }
     })
+}
+
+async function fetchModelPerformanceGraph(currencyCode) {
+  return fetch(`${URL_PREFIX}graph/modelperformance?currency_code=${currencyCode}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    if (response.ok) {
+      return response;
+    }
+    throw response;
+  })
+  .then(data => data.blob())
+  .then(blob => URL.createObjectURL(blob))
+  .catch(response => { 
+    // case when backend server is working, and sent frontend the error message
+    if (response.isError) {
+      return response.json();
+    } else {
+      // case when backend server is not working fine and didn't send any useful info to frontend
+      return {
+        "isError": true,
+        "code": "Error",
+        "message": "Something wrong with the backend server",
+      }
+    }
+  })
 }
 
 async function fetchStatistics(currency_code) {
@@ -99,6 +129,7 @@ async function fetchCurrencyList() {
 export default function Statistics({ setError, setLoading }){
 
     const [pic, setPic] = useState();
+    const [pic2, setPic2] = useState();
     const [currencyCode, setCurrencyCode] = useState("USD");
     const [currencyList, setCurrencyList] = useState(["USD"]);
     const [statistics, setStatistics] = useState({});
@@ -109,7 +140,7 @@ export default function Statistics({ setError, setLoading }){
       async function fetchData() {
         setLoading(true);
 
-        const response = await fetchActualPredGraph(currencyCode);
+        const response = await fetchModelPerformanceGraph(currencyCode);
         if (response.isError){
           setError(response);
         } else {
@@ -133,6 +164,14 @@ export default function Statistics({ setError, setLoading }){
           setStatistics(data);
         }
 
+        const response4 = await fetchActualPredGraph(currencyCode);
+        if (response4.isError){
+          setError(response4);
+        } else {
+          const data = response4;
+          setPic2(data);
+        }
+
         setLoading(false);
       }
       fetchData();
@@ -145,7 +184,7 @@ export default function Statistics({ setError, setLoading }){
                 <SidePanel currencyList={ currencyList } setCurrencyCode={ setCurrencyCode }/>
             </div>
             <div className="right-content">
-                <DatasetStatistics currency_code={ currencyCode } statistics={ statistics }/>
+                <DatasetStatistics currency_code={ currencyCode } statistics={ statistics } pic2={ pic2 }/>
                 <ModelStatistics pic={ pic }/>
             </div>
         </Container>

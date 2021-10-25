@@ -1,15 +1,16 @@
 import React from 'react';
 import BigNumber from './ChartTemplate/BigNumber';
 import BigWord from './ChartTemplate/BigWord';
-import { CgTime, CgTimelapse } from 'react-icons/cg';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Container from 'react-bootstrap/Container';
+import Image from 'react-bootstrap/Image'
 import { FiTrendingDown, FiTrendingUp } from 'react-icons/fi';
 import { GoGraph } from 'react-icons/go';
+import { CgTime, CgTimelapse } from 'react-icons/cg';
 
 
-export default function DatasetStatistics({ currency_code, statistics }){
+export default function DatasetStatistics({ currency_code, statistics, pic2 }){
     return (
         <div>
             <Container>
@@ -39,7 +40,7 @@ export default function DatasetStatistics({ currency_code, statistics }){
                     <BigWord 
                         ChartIcon={ CgTimelapse }
                         ChartIconBackgroundColor={ "#FF7F60" }
-                        ChartHeader={ "Date for Maximum Exchange Rate"}
+                        ChartHeader={ "Date for Maximum Exchange Rate" }
                         ChartBody={ statistics["max_date"] }
                     />
                 </Col>
@@ -50,7 +51,7 @@ export default function DatasetStatistics({ currency_code, statistics }){
                         ChartIcon={ FiTrendingDown }
                         ChartIconBackgroundColor={ "#2EAC4D" }
                         ChartIconColor={ "#0C6038" }    
-                        ChartHeader={ "Minimum Exchange Rate"}
+                        ChartHeader={ "Minimum Exchange Rate (To MYR)" }
                         ChartBody={ statistics["min_rate"] }
                     />
                 </Col>
@@ -60,11 +61,13 @@ export default function DatasetStatistics({ currency_code, statistics }){
                         ChartIcon={ FiTrendingUp }
                         ChartIconBackgroundColor={ "#DB261F" }
                         ChartIconColor={ "#7A081F" }
-                        ChartHeader={ "Maximum Exchange Rate"}
+                        ChartHeader={ "Maximum Exchange Rate (To MYR)" }
                         ChartBody={ statistics["max_rate"] }
                     />
                 </Col>
             </Row>
+
+            <Image alt='actual_vs_predicted' src={ pic2 } className="responsive"/>
             
         </div>
     );
