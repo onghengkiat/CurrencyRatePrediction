@@ -112,7 +112,7 @@ class ModelTrainer():
     print("Done Compiling.")
 
     print("Fitting to Dataset...")
-    model.fit(x_train, y_train, epochs = 5, batch_size=1)
+    model.fit(x_train, y_train, epochs = 10, batch_size=1)
     print("Done Fitting.")
 
     self.model = model
