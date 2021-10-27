@@ -23,7 +23,7 @@ export default function NavBar(){
             <Navbar.Collapse id="navbar-nav" >
                 <Nav className="mr-auto">
                     <Nav.Link className="navigation-bar" href="/">Home</Nav.Link>
-                    <Nav.Link className="navigation-bar" href="/dashboard">Dashboard</Nav.Link>
+                    <Nav.Link className="navigation-bar" href="/dataset">Dataset</Nav.Link>
                     <Nav.Link className="navigation-bar" href="/statistic">Statistics</Nav.Link>
                 </Nav>
 
