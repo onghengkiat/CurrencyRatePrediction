@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Route, Switch } from 'react-router-dom';
 
 import Navbar from '../Navbar/Navbar';
@@ -18,6 +18,10 @@ function App() {
   const { error, setError } = useError();
   const { success, setSuccess } = useSuccess();
   const { loading, setLoading } = useLoading();
+
+  useEffect(() => {
+    document.title = "CurExc"
+  }, [])
 
   return (
       <BrowserRouter>

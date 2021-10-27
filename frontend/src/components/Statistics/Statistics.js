@@ -6,6 +6,7 @@ import './Statistics.css';
 import SidePanel from './StatisticsComponents/SidePanel';
 import ModelStatistics from './StatisticsComponents/ModelStatistics';
 import DatasetStatistics from './StatisticsComponents/DatasetStatistics';
+import { BACKEND_SERVER_ERROR } from '../../constants/error';
 
 
 async function fetchActualPredGraph(currencyCode) {
@@ -29,11 +30,7 @@ async function fetchActualPredGraph(currencyCode) {
         return response.json();
       } else {
         // case when backend server is not working fine and didn't send any useful info to frontend
-        return {
-          "isError": true,
-          "code": "Error",
-          "message": "Something wrong with the backend server",
-        }
+        return BACKEND_SERVER_ERROR;
       }
     })
 }
@@ -59,11 +56,7 @@ async function fetchModelPerformanceGraph(currencyCode) {
       return response.json();
     } else {
       // case when backend server is not working fine and didn't send any useful info to frontend
-      return {
-        "isError": true,
-        "code": "Error",
-        "message": "Something wrong with the backend server",
-      }
+      return BACKEND_SERVER_ERROR;
     }
   })
 }
@@ -88,11 +81,7 @@ async function fetchStatistics(currency_code) {
       return response.json();
     } else {
       // case when backend server is not working fine and didn't send any useful info to frontend
-      return {
-        "isError": true,
-        "code": "Error",
-        "message": "Something wrong with the backend server",
-      }
+      return BACKEND_SERVER_ERROR;
     }
   })
 }
@@ -117,11 +106,7 @@ async function fetchCurrencyList() {
         return response.json();
       } else {
         // case when backend server is not working fine and didn't send any useful info to frontend
-        return {
-          "isError": true,
-          "code": "Error",
-          "message": "Something wrong with the backend server",
-        }
+        return BACKEND_SERVER_ERROR;
       }
     })
 }

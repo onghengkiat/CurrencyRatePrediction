@@ -4,6 +4,7 @@ import { URL_PREFIX } from '../../constants/API';
 import MaterialTable from 'material-table';
 import React, { useEffect, useState } from 'react';
 import './Dashboard.css'
+import { BACKEND_SERVER_ERROR } from '../../constants/error';
 
 async function fetchDashboardData() {
     return fetch(`${URL_PREFIX}dashboard`, {
@@ -25,11 +26,7 @@ async function fetchDashboardData() {
         return response.json();
       } else {
         // case when backend server is not working fine and didn't send any useful info to frontend
-        return {
-          "isError": true,
-          "code": "Error",
-          "message": "Something wrong with the backend server",
-        }
+        return BACKEND_SERVER_ERROR;
       }
     })
 }

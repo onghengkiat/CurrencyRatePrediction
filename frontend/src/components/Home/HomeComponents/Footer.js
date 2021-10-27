@@ -28,7 +28,7 @@ export default function Footer(){
             The dataset is kindly provided by Bank Negara Malaysia.
           </Row>
           <Row>
-            There is an website hosted which shared the data about the currency exchange rate between Malaysia and other countries. The link is attached below:
+            There is a website hosted which shared the data about the currency exchange rate between Malaysia and other countries. The link is attached below:
           </Row>
           <Row>
             <a href="https://www.bnm.gov.my/web/guest/exchange-rates">https://www.bnm.gov.my/web/guest/exchange-rates</a>

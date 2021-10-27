@@ -37,7 +37,7 @@ export default function Features() {
                     <Col>
                         <Accordian>
                             <Card className="feature-card">
-                                <Accordian.Toggle as={Card.Header} eventKey="2">Model Transperancy</Accordian.Toggle>
+                                <Accordian.Toggle as={Card.Header} eventKey="2">Model Transparancy</Accordian.Toggle>
                                 <Accordian.Collapse eventKey="2">
                                     <Card.Body>
                                         <Card.Text>
