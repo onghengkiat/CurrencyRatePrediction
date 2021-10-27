@@ -3,7 +3,7 @@ import { BrowserRouter, Route, Switch } from 'react-router-dom';
 
 import Navbar from '../Navbar/Navbar';
 import Home from '../Home/Home';
-import Dashboard from '../Dashboard/Dashboard';
+import Dataset from '../Dataset/Dataset';
 import Spinner from '../Spinner/Spinner';
 import Statistics from '../Statistics/Statistics';
 
@@ -30,9 +30,9 @@ function App() {
         <Spinner loading={ loading } />
         <Switch>
 
-          <Route path="/dashboard">
+          <Route path="/dataset">
             <Navbar/>      
-            <Dashboard setError={ setError } setLoading={ setLoading }/>
+            <Dataset setError={ setError } setLoading={ setLoading }/>
           </Route>
 
           <Route path="/statistic">

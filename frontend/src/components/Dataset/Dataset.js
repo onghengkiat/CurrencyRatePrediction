@@ -3,7 +3,7 @@ import { columns } from '../../constants/dashboard';
 import { URL_PREFIX } from '../../constants/API';
 import MaterialTable from 'material-table';
 import React, { useEffect, useState } from 'react';
-import './Dashboard.css'
+import './Dataset.css'
 import { BACKEND_SERVER_ERROR } from '../../constants/error';
 
 async function fetchDashboardData() {
@@ -31,7 +31,7 @@ async function fetchDashboardData() {
     })
 }
 
-export default function Dashboard({ setError, setSuccess, setLoading }) {
+export default function Dataset({ setError, setSuccess, setLoading }) {
     const [dashboardData, setData] = useState();
   
     // acts as component did mount
