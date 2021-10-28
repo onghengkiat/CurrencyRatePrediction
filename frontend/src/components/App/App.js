@@ -20,7 +20,7 @@ function App() {
   const { loading, setLoading } = useLoading();
 
   useEffect(() => {
-    document.title = "CurExc"
+    document.title = "CurEx"
   }, [])
 
   return (

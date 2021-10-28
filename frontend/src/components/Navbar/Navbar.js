@@ -16,7 +16,7 @@ export default function NavBar(){
                 src="/logo512.png"
                 alt="Generic placeholder"
                 />
-                CurExc
+                CurEx
             </Navbar.Brand>
 
             <Navbar.Toggle aria-controls="navbar-nav" id="navbar-toggle" />
