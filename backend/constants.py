@@ -1,4 +1,4 @@
-DATASOURCE_LINK = "https://www.bnm.gov.my/exchange-rates"
+CURRENCY_EXCHANGE_RATE_LINK = "https://www.bnm.gov.my/exchange-rates"
 DATA_FILENAME = "MYR-ForeignCurrency.csv"
 
 MODEL_SAVE_PATH = "./model"

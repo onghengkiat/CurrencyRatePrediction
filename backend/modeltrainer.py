@@ -70,8 +70,7 @@ class ModelTrainer():
     
     print("PREPROCESSING DATA")
     print("------------------")
-    _df = df[self.currency_code]
-    _df = np.array(_df).reshape(-1,1)
+    _df = np.array(df['to_myr']).reshape(-1,1)
 
     # Normallization
     print("Performing Min Max Scaling...")

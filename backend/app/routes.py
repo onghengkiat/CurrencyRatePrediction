@@ -12,12 +12,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-def transform_json(to_myr, date_string, currency_code, prev_data, is_prediction=False):
+def transform_json(to_myr, date_string, currency_code, prev_data, is_prediction=False, from_myr=None):
     rate_changed_to_myr = 0
     rate_is_increased_to_myr = True
     rate_changed_from_myr = 0
     rate_is_increased_from_myr = True
-    from_myr = round(1.0/to_myr, 4)
+    if from_myr is None:
+        from_myr = round(1.0/to_myr, 4)
 
     if prev_data.get(currency_code, None) is not None:
         # getting the last data from the windows of data captured
@@ -123,13 +124,12 @@ def get_dashboard():
         for i, row in df.iterrows():
             cur_date = row['date']
             cur_date_string = cur_date.strftime('%Y-%m-%d')
-            for currency_code in currency_codes:
                 
-                cur_data = transform_json(row[currency_code], cur_date_string, currency_code, prev_data)
+            cur_data = transform_json(row['to_myr'], cur_date_string, row['currency_code'], prev_data, from_myr=row['from_myr'])
 
-                # Track it in the window
-                prev_data = put_into_window(prev_data, cur_data, currency_code)
-                data.append(cur_data)
+            # Track it in the window
+            prev_data = put_into_window(prev_data, cur_data, row['currency_code'])
+            data.append(cur_data)
 
         if cur_date is None:
             return jsonify({"message": "Successful", "data": data}), 200
@@ -141,7 +141,6 @@ def get_dashboard():
             data = data + forecast_next_n_days(model, scaler, currency_code, prev_data, cur_date, 7)
                 
         data.sort(key=itemgetter('date'), reverse=True)
-        data.sort(key=itemgetter('currency_code'))
         return jsonify({"message": "Successful", "data": data}), 200
     except Exception as e:
         print(e)
@@ -174,7 +173,7 @@ def get_actual_predicted_graph():
         plt.legend()
 
         # Specify formatter for the dates on X-axis
-        locator = mdates.MonthLocator()
+        locator = mdates.MonthLocator(interval=3)
         fmt = mdates.DateFormatter('%b\n%Y')
         X = plt.gca().xaxis
         X.set_major_locator(locator)
@@ -188,10 +187,11 @@ def get_actual_predicted_graph():
         scaler = scalers[currency_code]
 
         # Skip the first n, window size in which it can't make predictions on it
-        date = df["date"].tolist()[WINDOW_SIZE:]
+        _df = df[df['currency_code'] == currency_code]
+        date = _df["date"].tolist()[WINDOW_SIZE:]
 
         # Data Preprocessing
-        datax = scaler.transform(np.array(df[currency_code]).reshape(-1, 1))
+        datax = scaler.transform(np.array(_df["to_myr"]).reshape(-1, 1))
         datax, datay = split_x_y(datax, WINDOW_SIZE)
 
         y_pred = model.predict(datax)
@@ -227,20 +227,20 @@ def get_actual_predicted_graph():
 @cross_origin(origin='*')
 @missing_param_handler
 def get_statistic():
-    try: 
         currency_code = request.args.get('currency_code', None)
+        _df = df[df['currency_code'] == currency_code]
+        _df.reset_index(inplace=True)
+        min_rate = _df['to_myr'][0]
+        min_date = _df['date'][0].strftime('%d %b %Y')
+        max_rate = _df['to_myr'][0]
+        max_date = _df['date'][0].strftime('%d %b %Y')
 
-        min_rate = df[currency_code][0]
-        min_date = df['date'][0].strftime('%d %b %Y')
-        max_rate = df[currency_code][0]
-        max_date = df['date'][0].strftime('%d %b %Y')
-
-        for i, row in df.iterrows():
-            if row[currency_code] <= min_rate:
-                min_rate = row[currency_code]
+        for i, row in _df.iterrows():
+            if row['to_myr'] <= min_rate:
+                min_rate = row['to_myr']
                 min_date = row['date'].strftime('%d %b %Y')
-            elif row[currency_code] >= max_rate:
-                max_rate = row[currency_code]
+            elif row['to_myr'] >= max_rate:
+                max_rate = row['to_myr']
                 max_date = row['date'].strftime('%d %b %Y')
         data = {
             "min_rate": min_rate,
@@ -249,9 +249,6 @@ def get_statistic():
             "max_date": max_date,
         }
         return jsonify({"message": "Successful", "data": data}), 200
-    except Exception as e:
-        print(e)
-        return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
 
 @app.route("/currencylist")
 @cross_origin(origin='*')

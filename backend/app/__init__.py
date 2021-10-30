@@ -8,13 +8,13 @@ import joblib
 app = Flask(__name__)
 
 df = pd.read_csv(DATA_FILENAME, index_col=0)
-df["date"] = pd.to_datetime(df["date"], format='%d %b %Y')
+df["date"] = pd.to_datetime(df["date"], format='%Y-%m-%d')
 # remove the timezone
 df["date"] = df["date"].dt.tz_localize(None)
 # convert to datetime
 df["date"] = df["date"].dt.to_pydatetime()
 
-currency_codes = df.columns[1:].values.tolist()
+currency_codes = df['currency_code'].unique().tolist()
 
 models = {}
 scalers = {}

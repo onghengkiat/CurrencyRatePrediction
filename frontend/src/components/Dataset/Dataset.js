@@ -59,7 +59,7 @@ export default function Dataset({ setError, setSuccess, setLoading }) {
         icons={icons}
         columns={columns}
         options={{
-          grouping: true
+          filtering: true
         }}
       />
     );
