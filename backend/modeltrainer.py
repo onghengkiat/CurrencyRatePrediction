@@ -4,20 +4,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 import keras
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
+import math
 import joblib
 from keras.models import Sequential
 from keras.layers import Dense, LSTM
 import os
-from constants import MODEL_FILENAME, SCALAR_FILENAME, GRAPH_FILENAME, MODEL_SAVE_PATH
+from constants import MODEL_SAVE_PATH
 
 class ModelTrainer():
 
-  def __init__(self, currency_code, window_size=3):
+  def __init__(self, currency_code, model_filename, scalar_filename, window_size=3):
     self.window_size = window_size
     self.currency_code = currency_code
     self.scaler = None
     self.model = None
     self.algorithm = "LSTM"
+
+    self.model_filename = model_filename
+    self.scalar_filename = scalar_filename
+    self.graph_filename = ""
 
   def set_window_size(self, window_size):
     self.window_size = window_size
@@ -47,9 +53,15 @@ class ModelTrainer():
     print("\n\n")
 
   def save(self):
-    model_filename = os.path.join(MODEL_SAVE_PATH, self.currency_code, MODEL_FILENAME)
-    scaler_filename = os.path.join(MODEL_SAVE_PATH, self.currency_code, SCALAR_FILENAME)
-    img_filename = os.path.join(MODEL_SAVE_PATH, self.currency_code, GRAPH_FILENAME)
+    directory = os.path.join(MODEL_SAVE_PATH, self.currency_code)
+    # Clear the directory
+    if os.path.exists(directory):
+      for filename in os.listdir(directory):
+        os.remove(os.path.join(directory, filename))
+        
+    model_filename = os.path.join(directory, self.model_filename)
+    scaler_filename = os.path.join(directory, self.scalar_filename)
+    img_filename = os.path.join(directory, self.graph_filename)
 
     self.model.save(model_filename, save_format="h5")
     joblib.dump(self.scaler, scaler_filename) 
@@ -70,7 +82,7 @@ class ModelTrainer():
     
     print("PREPROCESSING DATA")
     print("------------------")
-    _df = np.array(df['to_myr']).reshape(-1,1)
+    _df = np.array(df['from_myr']).reshape(-1,1)
 
     # Normallization
     print("Performing Min Max Scaling...")
@@ -135,6 +147,16 @@ class ModelTrainer():
     _y_test = self.scaler.inverse_transform(_y_test)
     print("Done Predicting.")
 
+    R2 = round(r2_score(_y_test, _y_pred), 4)
+    print(f"R SQUARE: {R2}")
+    RMSE = round(math.sqrt(mean_squared_error(_y_test, _y_pred)), 4)
+    print(f"RMSE: {RMSE}")
+    MAE = round(mean_absolute_error(_y_test, _y_pred), 4)
+    print(f"MAE: {MAE}")
+
+    self.graph_filename = f"R2={R2},RMSE={RMSE},MAE={MAE}.png"
     print("Plotting Actual & Predict Graph")
     _plot_actual_predict_graph(_y_test, _y_pred, self.currency_code, self.window_size)
     print("Done Plotting.")
+
+    

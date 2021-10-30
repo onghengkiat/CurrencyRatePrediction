@@ -1,5 +1,5 @@
 from flask import Flask
-from constants import DATA_FILENAME, MODEL_FILENAME, SCALAR_FILENAME, GRAPH_FILENAME, MODEL_SAVE_PATH, WINDOW_SIZE
+from constants import DATA_FILENAME, MODEL_FILENAME, SCALAR_FILENAME, MODEL_SAVE_PATH, WINDOW_SIZE
 import pandas as pd
 import os
 from tensorflow.keras.models import load_model

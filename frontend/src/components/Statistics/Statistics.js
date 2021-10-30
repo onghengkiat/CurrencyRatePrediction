@@ -61,6 +61,31 @@ async function fetchModelPerformanceGraph(currencyCode) {
   })
 }
 
+async function fetchModelPerformance(currencyCode) {
+  return fetch(`${URL_PREFIX}modelperformance?currency_code=${currencyCode}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    if (response.ok) {
+      return response.json();
+    }
+    throw response;
+  })
+  .then(data => data.data)
+  .catch(response => { 
+    // case when backend server is working, and sent frontend the error message
+    if (response.isError) {
+      return response.json();
+    } else {
+      // case when backend server is not working fine and didn't send any useful info to frontend
+      return BACKEND_SERVER_ERROR;
+    }
+  })
+}
+
 async function fetchStatistics(currency_code) {
   return fetch(`${URL_PREFIX}statistic?currency_code=${currency_code}`, {
     method: 'GET',
@@ -118,6 +143,7 @@ export default function Statistics({ setError, setLoading }){
     const [currencyCode, setCurrencyCode] = useState("USD");
     const [currencyList, setCurrencyList] = useState(["USD"]);
     const [statistics, setStatistics] = useState({});
+    const [modelPerformance, setModelPerformance] = useState({});
   
     // acts as component did mount
     // fetch the data
@@ -157,6 +183,14 @@ export default function Statistics({ setError, setLoading }){
           setPic2(data);
         }
 
+        const response5 = await fetchModelPerformance(currencyCode);
+        if (response5.isError){
+          setError(response5);
+        } else {
+          const data = response5;
+          setModelPerformance(data);
+        }
+
         setLoading(false);
       }
       fetchData();
@@ -168,8 +202,8 @@ export default function Statistics({ setError, setLoading }){
                 <SidePanel currencyList={ currencyList } setCurrencyCode={ setCurrencyCode }/>
             </div>
             <div className="right-content">
-                <DatasetStatistics currency_code={ currencyCode } statistics={ statistics } pic2={ pic2 }/>
-                <ModelStatistics pic={ pic }/>
+                <DatasetStatistics currencyCode={ currencyCode } statistics={ statistics } pic2={ pic2 }/>
+                <ModelStatistics pic={ pic } modelPerformance={ modelPerformance }/>
             </div>
         </Container>
     );

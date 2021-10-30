@@ -10,7 +10,7 @@ import { GoGraph } from 'react-icons/go';
 import { CgTime, CgTimelapse } from 'react-icons/cg';
 
 
-export default function DatasetStatistics({ currency_code, statistics, pic2 }){
+export default function DatasetStatistics({ currencyCode, statistics, pic2 }){
     return (
         <div>
             <Container>
@@ -20,7 +20,7 @@ export default function DatasetStatistics({ currency_code, statistics, pic2 }){
                             <Col>
                                 <GoGraph id="dashboard-title-icon"/>
                                 <h5><b>Dataset Statistics</b></h5>
-                                <h5 className="text-muted"><b>Currency Code: {currency_code}</b></h5>
+                                <h5 className="text-muted"><b>Currency Code: {currencyCode}</b></h5>
                             </Col>
                         </Row>
                     </Container>
@@ -51,7 +51,7 @@ export default function DatasetStatistics({ currency_code, statistics, pic2 }){
                         ChartIcon={ FiTrendingDown }
                         ChartIconBackgroundColor={ "#2EAC4D" }
                         ChartIconColor={ "#0C6038" }    
-                        ChartHeader={ "Minimum Exchange Rate (To MYR)" }
+                        ChartHeader={ "Minimum Exchange Rate (From MYR)" }
                         ChartBody={ statistics["min_rate"] }
                     />
                 </Col>
@@ -61,7 +61,7 @@ export default function DatasetStatistics({ currency_code, statistics, pic2 }){
                         ChartIcon={ FiTrendingUp }
                         ChartIconBackgroundColor={ "#DB261F" }
                         ChartIconColor={ "#7A081F" }
-                        ChartHeader={ "Maximum Exchange Rate (To MYR)" }
+                        ChartHeader={ "Maximum Exchange Rate (From MYR)" }
                         ChartBody={ statistics["max_rate"] }
                     />
                 </Col>

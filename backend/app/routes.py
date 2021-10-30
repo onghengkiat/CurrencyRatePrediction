@@ -2,7 +2,7 @@ from app import app, df, models, scalers, currency_codes
 from flask import request, jsonify, send_file, make_response
 from app.util import missing_param_handler
 import pandas as pd
-from constants import MODEL_SAVE_PATH, GRAPH_FILENAME, WINDOW_SIZE
+from constants import MODEL_SAVE_PATH, WINDOW_SIZE
 from operator import itemgetter
 from datetime import datetime, timedelta
 import os
@@ -12,13 +12,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-def transform_json(to_myr, date_string, currency_code, prev_data, is_prediction=False, from_myr=None):
+def transform_json(from_myr, date_string, currency_code, prev_data, is_prediction=False, to_myr=None):
     rate_changed_to_myr = 0
     rate_is_increased_to_myr = True
     rate_changed_from_myr = 0
     rate_is_increased_from_myr = True
-    if from_myr is None:
-        from_myr = round(1.0/to_myr, 4)
+    if to_myr is None:
+        to_myr = round(1.0/from_myr, 4)
 
     if prev_data.get(currency_code, None) is not None:
         # getting the last data from the windows of data captured
@@ -79,34 +79,34 @@ def preprocess_data(list_of_dict, scaler):
     # }, ...]
     _model_input = []
     for d in list_of_dict:
-        _model_input.append([d["to_myr"]])
+        _model_input.append([d["from_myr"]])
     _model_input = scaler.transform(_model_input)
     return _model_input.reshape(_model_input.shape[0], _model_input.shape[1], 1)
 
-def forecast_next_n_days(model, scaler, currency_code, prev_data, begin_date, n, only_to_myr=False):
+def forecast_next_n_days(model, scaler, currency_code, prev_data, begin_date, n, only_from_myr=False):
     data = []
     cur_date = begin_date
     model_inputs = prev_data
     for i in range(n):
-        if only_to_myr:
+        if only_from_myr:
             # Process the inputs
             model_inputs = model_inputs.reshape(1, model_inputs.shape[0], model_inputs.shape[1])
-            to_myr_predicted = model.predict(model_inputs)
+            from_myr_predicted = model.predict(model_inputs)
 
             # Track it in the windows
-            model_inputs = np.concatenate((model_inputs[0], to_myr_predicted))
+            model_inputs = np.concatenate((model_inputs[0], from_myr_predicted))
             model_inputs = model_inputs[1:]
 
-            data.append(to_myr_predicted[0])
+            data.append(from_myr_predicted[0])
         else:
             cur_date = cur_date + timedelta(days=1)
             cur_date_string = cur_date.strftime('%Y-%m-%d')
             model_inputs = preprocess_data(prev_data[currency_code], scaler)
 
-            to_myr_predicted = model.predict(model_inputs)
-            to_myr_predicted = round(float(scaler.inverse_transform(to_myr_predicted)[0][0]), 4)
+            from_myr_predicted = model.predict(model_inputs)
+            from_myr_predicted = round(float(scaler.inverse_transform(from_myr_predicted)[0][0]), 4)
 
-            cur_data = transform_json(to_myr_predicted, cur_date_string, currency_code, prev_data, is_prediction=True)
+            cur_data = transform_json(from_myr_predicted, cur_date_string, currency_code, prev_data, is_prediction=True)
 
             # Track it in the window
             prev_data = put_into_window(prev_data, cur_data, currency_code)
@@ -125,7 +125,7 @@ def get_dashboard():
             cur_date = row['date']
             cur_date_string = cur_date.strftime('%Y-%m-%d')
                 
-            cur_data = transform_json(row['to_myr'], cur_date_string, row['currency_code'], prev_data, from_myr=row['from_myr'])
+            cur_data = transform_json(row['from_myr'], cur_date_string, row['currency_code'], prev_data, to_myr=row['from_myr'])
 
             # Track it in the window
             prev_data = put_into_window(prev_data, cur_data, row['currency_code'])
@@ -152,12 +152,44 @@ def get_dashboard():
 @missing_param_handler
 def get_model_actual_predicted_graph():
     currency_code = request.args.get('currency_code', None)
-    directory = os.path.join("." + MODEL_SAVE_PATH, currency_code, GRAPH_FILENAME)
+    directory = os.path.join(MODEL_SAVE_PATH, currency_code)
+
+    filename = ""
+    for f in os.listdir(directory):
+        if f.endswith(".png"):
+            filename = os.path.join(directory, f)
+            break
     try:
-        r = send_file(directory, as_attachment=False)
+        # append . here because send_file is using relative path
+        r = send_file("." + filename, as_attachment=False)
     except Exception as e:
         print(e)
     return r
+
+@app.route("/modelperformance")
+@cross_origin(origin='*')
+@missing_param_handler
+def get_model_performance():
+    currency_code = request.args.get('currency_code', None)
+    directory = os.path.join(MODEL_SAVE_PATH, currency_code)
+
+    filename = ""
+    for f in os.listdir(directory):
+        if f.endswith(".png"):
+            # remove extension name
+            filename = os.path.splitext(f)[0]
+            break
+    try:
+        # get the metrics
+        data = {}
+        metrics = filename.split(",")
+        for metric in metrics:
+            name_value = metric.split("=")
+            data[name_value[0]] = name_value[1]
+        return jsonify({"message": "Successful", "data": data}), 200
+    except Exception as e:
+        print(e)
+        return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
 
 @app.route("/graph/statistic")
 @cross_origin(origin='*')
@@ -191,12 +223,12 @@ def get_actual_predicted_graph():
         date = _df["date"].tolist()[WINDOW_SIZE:]
 
         # Data Preprocessing
-        datax = scaler.transform(np.array(_df["to_myr"]).reshape(-1, 1))
+        datax = scaler.transform(np.array(_df["from_myr"]).reshape(-1, 1))
         datax, datay = split_x_y(datax, WINDOW_SIZE)
 
         y_pred = model.predict(datax)
         # Predict next n days currency rate
-        future_forecast = forecast_next_n_days(model, scaler, currency_code, datax[-1], date[-1], FORECAST_DAYS, only_to_myr=True)
+        future_forecast = forecast_next_n_days(model, scaler, currency_code, datax[-1], date[-1], FORECAST_DAYS, only_from_myr=True)
         y_pred = np.concatenate((y_pred, future_forecast))
 
         # Transform back to the normal values
@@ -230,17 +262,17 @@ def get_statistic():
         currency_code = request.args.get('currency_code', None)
         _df = df[df['currency_code'] == currency_code]
         _df.reset_index(inplace=True)
-        min_rate = _df['to_myr'][0]
+        min_rate = _df['from_myr'][0]
         min_date = _df['date'][0].strftime('%d %b %Y')
-        max_rate = _df['to_myr'][0]
+        max_rate = _df['from_myr'][0]
         max_date = _df['date'][0].strftime('%d %b %Y')
 
         for i, row in _df.iterrows():
-            if row['to_myr'] <= min_rate:
-                min_rate = row['to_myr']
+            if row['from_myr'] <= min_rate:
+                min_rate = row['from_myr']
                 min_date = row['date'].strftime('%d %b %Y')
-            elif row['to_myr'] >= max_rate:
-                max_rate = row['to_myr']
+            elif row['from_myr'] >= max_rate:
+                max_rate = row['from_myr']
                 max_date = row['date'].strftime('%d %b %Y')
         data = {
             "min_rate": min_rate,

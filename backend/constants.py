@@ -8,5 +8,4 @@ DOWNLOAD_DIR = "/home/user/Downloads"
 MODEL_SAVE_PATH = "./model"
 MODEL_FILENAME = "model"
 SCALAR_FILENAME = "scaler"
-GRAPH_FILENAME = "graph.png"
 WINDOW_SIZE = 4
