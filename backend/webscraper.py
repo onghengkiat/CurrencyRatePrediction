@@ -15,12 +15,13 @@ import tempfile
 from datetime import datetime
 
 class WebScraper:
-    def __init__(self, curex_url, cpi_url, cpi_filename, download_dir):
+    def __init__(self, curex_url, cpi_url, cpi_filename, gdp_url, download_dir):
         self.CURRENCY_EXCHANGE_RATE_URL = curex_url
         self.CPI_URL = cpi_url
         self.CPI_FILENAME = cpi_filename
+        self.GDP_URL = gdp_url
         self.DOWNLOAD_DIR = download_dir
-        self.MAPPING = {
+        self.CPI_MAPPING = {
             "United States": {
                 "currency_code": "USD",
                 "position": 0
@@ -129,6 +130,36 @@ class WebScraper:
                 "currency_code": "MYR",
                 "position": 0
             }
+        }
+
+        self.GDP_MAPPING = {
+            "United States": "USD",
+            "United Kingdom": "GBP",
+            "Euro area": "EUR",
+            "Japan": "JPY",
+            "Switzerland": "CHF",
+            "Australia": "AUD",
+            "Canada": "CAD",
+            "Singapore": "SGD",
+            "Hong Kong SAR, China": "HKD",
+            "Thailand": "THB",
+            "Philippines": "PHP",
+            "Taiwan": "TWD",
+            "Korea, Rep.": "KRW",
+            "Indonesia": "IDR",
+            "Saudi Arabia": "SAR",
+            "China": "CNY",
+            "Brunei Darussalam": "BND",
+            "Vietnam": "VND",
+            "Cambodia": "KHR",
+            "New Zealand": "NZD",
+            "Myanmar": "MMK",
+            "India": "INR",
+            "United Arab Emirates": "AED",
+            "Pakistan": "PKR",
+            "Nepal": "NPR",
+            "Egypt, Arab Rep.": "EGP",
+            "Malaysia": "MYR",
         }
 
     def _is_header(self, row):
@@ -436,7 +467,7 @@ class WebScraper:
                 click_changing_button(float_block, "PPButton")
 
                 # Select the countries
-                for key, detail in self.MAPPING.items():
+                for key, detail in self.CPI_MAPPING.items():
                     # Key in country name
                     WebDriverWait(driver, 60).until(
                         lambda driver : driver.find_element_by_class_name("PPFloatBlocks")
@@ -485,10 +516,11 @@ class WebScraper:
         time.sleep(20)
 
     def get_df(self):
+        print("Scraping Currency Exchange Rate Data...")
         df = self._scrap_currency_exchange_rate()
+        print("Done Scraping Currency Exchange Rate Data.")
 
         df["date"] = pd.to_datetime(df["date"], format='%d %b %Y')
-        # df["date"] = pd.to_datetime(df["date"], format='%Y-%m-%d')
         # remove the timezone
         df["date"] = df["date"].dt.tz_localize(None)
         # convert to datetime
@@ -499,6 +531,7 @@ class WebScraper:
 
         # Sort it by currency code followed by dates
         df.sort_values(["currency_code", "date"], ascending=[True, True], inplace=True)
+        print("Scraping CPI Data...\n\n")
         self._scrap_cpi()
 
         # Move the downloaded file to the temp app directory
@@ -517,16 +550,16 @@ class WebScraper:
         cpi_df.columns = column_names
 
         # Search for the countries that are not found in the CPI database and filter their currency codes out from the df
-        for key, val in self.MAPPING.items():
+        for key, val in self.CPI_MAPPING.items():
             if key not in cpi_df["country_name"].unique():
                 print(key + " is not found in the CPI database")
-                df = df[df['currency_code'] != self.MAPPING[key]["currency_code"]]
+                df = df[df['currency_code'] != self.CPI_MAPPING[key]["currency_code"]]
 
         df["month"] = df.date.dt.month
         df["year"] = df.date.dt.year
         df["cpi"] = np.nan
         for i, row in cpi_df.iterrows():
-            currency_code = self.MAPPING[row["country_name"]]["currency_code"]
+            currency_code = self.CPI_MAPPING[row["country_name"]]["currency_code"]
             for date in column_names[1:]:
                 date_obj = datetime.strptime(date, "%b %Y")
                 month, year = date_obj.month, date_obj.year
@@ -538,6 +571,43 @@ class WebScraper:
                     year = year + 1
                 df.loc[(df["month"] == month) & (df["year"] == year) & (df["currency_code"] == currency_code), "cpi"] = row[date]
 
+        print("Done Scraping CPI Data.\n\n")
+
+        print("Scraping GDP Data...")
+        connection_trial = 0
+        connection_is_failed = True
+        while connection_is_failed:
+            try:
+                downloaded = requests.get(self.GDP_URL)
+                connection_is_failed = False
+            except ConnectionError as e:
+                connection_trial += 1
+                print(f"Connection failed for {connection_trial} trials.")
+
+        # Header row starting from 4th row
+        gdp_df = pd.read_excel(downloaded.content, sheet_name="Data", skiprows=3)
+        gdp_df.reset_index(drop=True, inplace=True)
+        column_names = gdp_df.columns.tolist()
+
+        # Search for the countries that are not found in the GDP database and filter their currency codes out from the df
+        for key, val in self.GDP_MAPPING.items():
+            if key not in gdp_df["Country Name"].unique():
+                print(key + " is not found in the GDP database")
+                df = df[df["currency_code"] != self.GDP_MAPPING[key]]
+
+        df["gdp"] = np.nan
+        for i, row in gdp_df.iterrows():
+
+            currency_code = self.GDP_MAPPING.get(row["Country Name"], None)
+            if currency_code is None:
+                continue
+
+            for year in column_names[-4:]:
+                
+                # Year plus 1 because cur year is used to predict next year
+                df.loc[(df["year"] == int(year) + 1) & (df["currency_code"] == currency_code), "gdp"] = row[year]
+        print("Done Scraping GDP Data.\n\n")
+        print(df[df.isna().any(axis=1)])
         # Month and Year are not needed for visualization and analysis processes
         df.drop(["month", "year"], axis=1, inplace=True)
 
