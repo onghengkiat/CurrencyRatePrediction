@@ -313,8 +313,8 @@ class WebScraper:
         WebDriverWait(driver, 60).until(
             lambda driver : driver.find_element_by_class_name("EarDimItem")
         )
-        # 10 seconds for everything to really completed loading
-        time.sleep(10)
+        # 15 seconds for everything to really completed loading
+        time.sleep(15)
         control_panels = driver.find_elements_by_class_name("EarDimItem")
         # Select Time
         for control_panel in control_panels:
@@ -384,7 +384,7 @@ class WebScraper:
         WebDriverWait(driver, 60).until(
             lambda driver : driver.find_element_by_class_name("EarDimItem")
         )
-        time.sleep(10)
+        time.sleep(15)
         control_panels = driver.find_elements_by_class_name("EarDimItem")
 
         # Select field
@@ -441,7 +441,7 @@ class WebScraper:
         WebDriverWait(driver, 60).until(
             lambda driver : driver.find_element_by_class_name("EarDimItem")
         )
-        time.sleep(10)
+        time.sleep(15)
         control_panels = driver.find_elements_by_class_name("EarDimItem")
 
         # Select countries
@@ -503,6 +503,7 @@ class WebScraper:
         WebDriverWait(driver, 60).until(
             lambda driver : driver.find_elements_by_class_name("PPContent")
         )
+        time.sleep(2)
         ppcontents = driver.find_elements_by_class_name("PPContent")
         for ppcontent in ppcontents:
             if ppcontent.text == "Export":
@@ -518,7 +519,14 @@ class WebScraper:
     def get_df(self):
         print("Scraping Currency Exchange Rate Data...")
         df = self._scrap_currency_exchange_rate()
-        print("Done Scraping Currency Exchange Rate Data.")
+        print("Done Scraping Currency Exchange Rate Data.\n\n")
+        malaysia_data = [{
+            "currency_code": "MYR",
+            "date": date,
+            "from_myr": 1,
+            "to_myr": 1,
+        } for date in df["date"].unique()]
+        df = df.append(malaysia_data, ignore_index=True, sort=False)
 
         df["date"] = pd.to_datetime(df["date"], format='%d %b %Y')
         # remove the timezone
@@ -531,7 +539,7 @@ class WebScraper:
 
         # Sort it by currency code followed by dates
         df.sort_values(["currency_code", "date"], ascending=[True, True], inplace=True)
-        print("Scraping CPI Data...\n\n")
+        print("Scraping CPI Data...")
         self._scrap_cpi()
 
         # Move the downloaded file to the temp app directory

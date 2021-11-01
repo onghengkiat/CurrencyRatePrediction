@@ -9,6 +9,8 @@ df.to_csv(DATA_FILENAME)
 # df = pd.read_csv(DATA_FILENAME, index_col=0)
 currency_codes = df['currency_code'].unique()
 for currency_code in currency_codes:
+    if currency_code == 'MYR':
+        continue
     modelTrainer = ModelTrainer(currency_code, MODEL_FILENAME, SCALAR_FILENAME)
     modelTrainer.set_window_size(WINDOW_SIZE)
     modelTrainer.build(df[df['currency_code'] == currency_code])

@@ -8,6 +8,8 @@ import joblib
 app = Flask(__name__)
 
 df = pd.read_csv(DATA_FILENAME, index_col=0)
+df = df[df['currency_code'] != 'MYR']
+
 df["date"] = pd.to_datetime(df["date"], format='%Y-%m-%d')
 # remove the timezone
 df["date"] = df["date"].dt.tz_localize(None)
