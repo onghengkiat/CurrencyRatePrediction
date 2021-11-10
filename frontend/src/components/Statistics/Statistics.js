@@ -9,8 +9,8 @@ import DatasetStatistics from './StatisticsComponents/DatasetStatistics';
 import { BACKEND_SERVER_ERROR } from '../../constants/error';
 
 
-async function fetchActualPredGraph(currencyCode, algorithm) {
-    return fetch(`${URL_PREFIX}graph/statistic?currency_code=${currencyCode}&algorithm=${algorithm}`, {
+async function fetchActualPredGraph(currencyCode, algorithm, include_cpi, include_gdp) {
+    return fetch(`${URL_PREFIX}graph/statistic?currency_code=${currencyCode}&algorithm=${algorithm}&include_cpi=${include_cpi}&include_gdp=${include_gdp}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -35,8 +35,8 @@ async function fetchActualPredGraph(currencyCode, algorithm) {
     })
 }
 
-async function fetchModelPerformanceGraph(currencyCode, algorithm) {
-  return fetch(`${URL_PREFIX}graph/modelperformance?currency_code=${currencyCode}&algorithm=${algorithm}`, {
+async function fetchModelPerformanceGraph(currencyCode, algorithm, include_cpi, include_gdp) {
+  return fetch(`${URL_PREFIX}graph/modelperformance?currency_code=${currencyCode}&algorithm=${algorithm}&include_cpi=${include_cpi}&include_gdp=${include_gdp}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json'
@@ -61,8 +61,8 @@ async function fetchModelPerformanceGraph(currencyCode, algorithm) {
   })
 }
 
-async function fetchModelPerformance(currencyCode, algorithm) {
-  return fetch(`${URL_PREFIX}modelperformance?currency_code=${currencyCode}&algorithm=${algorithm}`, {
+async function fetchModelPerformance(currencyCode, algorithm, include_cpi, include_gdp) {
+  return fetch(`${URL_PREFIX}modelperformance?currency_code=${currencyCode}&algorithm=${algorithm}&include_cpi=${include_cpi}&include_gdp=${include_gdp}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json'
@@ -167,6 +167,8 @@ export default function Statistics({ setError, setLoading }){
     const [pic2, setPic2] = useState();
     const [currencyCode, setCurrencyCode] = useState("USD");
     const [algorithm, setAlgorithm] = useState("LSTM");
+    const [includeCPI, setCPI] = useState(false);
+    const [includeGDP, setGDP] = useState(false);
     const [currencyList, setCurrencyList] = useState(["USD"]);
     const [algorithmList, setAlgorithmList] = useState(["LSTM"]);
     const [statistics, setStatistics] = useState({});
@@ -178,7 +180,7 @@ export default function Statistics({ setError, setLoading }){
       async function fetchData() {
         setLoading(true);
 
-        const response = await fetchModelPerformanceGraph(currencyCode, algorithm);
+        const response = await fetchModelPerformanceGraph(currencyCode, algorithm, includeCPI, includeGDP);
         if (response.isError){
           setError(response);
         } else {
@@ -202,7 +204,7 @@ export default function Statistics({ setError, setLoading }){
           setStatistics(data);
         }
 
-        const response4 = await fetchActualPredGraph(currencyCode, algorithm);
+        const response4 = await fetchActualPredGraph(currencyCode, algorithm, includeCPI, includeGDP);
         if (response4.isError){
           setError(response4);
         } else {
@@ -210,7 +212,7 @@ export default function Statistics({ setError, setLoading }){
           setPic2(data);
         }
 
-        const response5 = await fetchModelPerformance(currencyCode, algorithm);
+        const response5 = await fetchModelPerformance(currencyCode, algorithm, includeCPI, includeGDP);
         if (response5.isError){
           setError(response5);
         } else {
@@ -229,12 +231,12 @@ export default function Statistics({ setError, setLoading }){
         setLoading(false);
       }
       fetchData();
-    }, [currencyCode, algorithm]);
+    }, [currencyCode, algorithm, includeCPI, includeGDP]);
     
     return (
         <Container fluid>
             <div className="left-content">
-                <SidePanel currencyList={ currencyList } setCurrencyCode={ setCurrencyCode } algorithmList={ algorithmList } setAlgorithm={ setAlgorithm }/>
+                <SidePanel currencyList={ currencyList } setCurrencyCode={ setCurrencyCode } algorithmList={ algorithmList } setAlgorithm={ setAlgorithm } setCPI={ setCPI } setGDP={ setGDP }/>
             </div>
             <div className="right-content">
                 <DatasetStatistics currencyCode={ currencyCode } statistics={ statistics } pic2={ pic2 }/>

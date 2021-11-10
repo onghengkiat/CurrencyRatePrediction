@@ -20,17 +20,18 @@ class ModelTrainer():
 
   ALGORITHMS_AVAILABLE = ["LSTM", "POLYNOMIAL", "LINEAR", "LASSO", "RIDGE"]
 
-  def __init__(self, currency_code, model_filename, model_save_path, algorithm="LSTM", 
-               window_size=3, include_cpi=False, include_gdp=False, num_of_neuron=100, 
-               num_of_iteration=10, dropout=0, alpha=0.001, test_size=0.2):
+  def __init__(self, currency_code, model_filename, model_save_path, 
+               model_with_cpi, model_with_gdp, model_with_gdp_and_cpi, model_only_rate,
+               algorithm="LSTM",  window_size=3, include_cpi=False, include_gdp=False, 
+               num_of_neuron=100, num_of_iteration=10, dropout=0, alpha=0.001, test_size=0.2):
     self.currency_code = currency_code
     self.scaler = None
     self.model = None
 
     self.window_size = window_size
     self.algorithm = algorithm
-    self.include_cpi= include_cpi
-    self.include_gdp= include_gdp
+    self.include_cpi = include_cpi
+    self.include_gdp = include_gdp
     self.num_of_feature = self.window_size + self.include_cpi + self.include_gdp
 
     self.num_of_neuron = num_of_neuron
@@ -39,6 +40,11 @@ class ModelTrainer():
 
     self.alpha = alpha
 
+    # Models saving directory
+    self.model_with_cpi = model_with_cpi
+    self.model_with_gdp = model_with_gdp
+    self.model_with_gdp_and_cpi = model_with_gdp_and_cpi
+    self.model_only_rate = model_only_rate
     self.model_filename = model_filename
     self.graph_filename = ""
     self.model_save_path = model_save_path
@@ -104,8 +110,8 @@ class ModelTrainer():
     -----------
     Train the model, evaluate the model and save it inside the class object
     """
-    main_evaluation_metric = -9999
-    target = -9998
+    main_evaluation_metric = -99999
+    target = -99998
     while main_evaluation_metric < target:
       self.num_of_feature = self.window_size + self.include_cpi + self.include_gdp
       self.introduce()
@@ -137,6 +143,14 @@ class ModelTrainer():
       return
     
     directory = os.path.join(self.model_save_path, self.currency_code, self.algorithm)
+    if self.include_cpi and self.include_gdp:
+      directory = os.path.join(directory, self.model_with_gdp_and_cpi)
+    elif self.include_cpi:
+      directory = os.path.join(directory, self.model_with_cpi)
+    elif self.include_gdp:
+      directory = os.path.join(directory, self.model_with_gdp)
+    else:
+      directory = os.path.join(directory, self.model_only_rate)
 
     ###
     ### Clear the directory
@@ -402,10 +416,10 @@ class ModelTrainer():
         _index.append("Rate (" + str(self.window_size - i) + " Days Ago)")
 
       if self.include_cpi:
-        _index.append("CPI Difference")
+        _index.append("CPI")
 
       if self.include_gdp:
-        _index.append("GDP Growth Rate Difference")
+        _index.append("GDP Growth Rate")
 
       if self.algorithm == "LSTM":
         return

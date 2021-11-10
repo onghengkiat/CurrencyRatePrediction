@@ -14,6 +14,7 @@ from tensorflow.keras.models import load_model
 from modeltrainer import ModelTrainer
 from sklearn.preprocessing import MinMaxScaler, PolynomialFeatures
 import joblib
+from constants import MODEL_WITH_CPI, MODEL_WITH_GDP, MODEL_WITH_GDP_AND_CPI, MODEL_ONLY_RATE
 
 #######
 # API #
@@ -81,7 +82,18 @@ def get_dashboard():
 def get_model_actual_predicted_graph():
     currency_code = request.args.get('currency_code', None)
     algorithm = request.args.get('algorithm', 'LSTM')
+    include_cpi = request.args.get('include_cpi', 'false') == 'true'
+    include_gdp = request.args.get('include_gdp', 'false') == 'true'
     directory = os.path.join(MODEL_SAVE_PATH, currency_code, algorithm)
+
+    if include_cpi and include_gdp:
+        directory = os.path.join(directory, MODEL_WITH_GDP_AND_CPI)
+    elif include_cpi:
+        directory = os.path.join(directory, MODEL_WITH_CPI)
+    elif include_gdp:
+        directory = os.path.join(directory, MODEL_WITH_GDP)
+    else:
+        directory = os.path.join(directory, MODEL_ONLY_RATE)
 
     filename = ""
     for f in os.listdir(directory):
@@ -101,7 +113,18 @@ def get_model_actual_predicted_graph():
 def get_model_performance():
     currency_code = request.args.get('currency_code', None)
     algorithm = request.args.get('algorithm', 'LSTM')
+    include_cpi = request.args.get('include_cpi', 'false') == 'true'
+    include_gdp = request.args.get('include_gdp', 'false') == 'true'
     directory = os.path.join(MODEL_SAVE_PATH, currency_code, algorithm)
+
+    if include_cpi and include_gdp:
+        directory = os.path.join(directory, MODEL_WITH_GDP_AND_CPI)
+    elif include_cpi:
+        directory = os.path.join(directory, MODEL_WITH_CPI)
+    elif include_gdp:
+        directory = os.path.join(directory, MODEL_WITH_GDP)
+    else:
+        directory = os.path.join(directory, MODEL_ONLY_RATE)
 
     filename = ""
     for f in os.listdir(directory):
@@ -125,7 +148,7 @@ def get_model_performance():
 @cross_origin(origin='*')
 @missing_param_handler
 def get_actual_predicted_graph():
-    def _preprocess_data(_df, scaler, algorithm):
+    def _preprocess_data(_df, scaler, algorithm, include_cpi=False, include_gdp=False):
         def _split_x_y(data, look_back, include_cpi=False, include_gdp=False):
             datax, datay = [],[]
             for i in range(len(data)-look_back):
@@ -137,8 +160,8 @@ def get_actual_predicted_graph():
                 datay.append(data[i + look_back, 0])
             return np.array(datax), np.array(datay)
 
-        _df['gdp'] = malaysia_df['gdp'] - df['gdp']
-        _df['cpi'] = malaysia_df['cpi'] - df['cpi']
+        _df['gdp'] = malaysia_df['gdp'] - _df['gdp']
+        _df['cpi'] = malaysia_df['cpi'] - _df['cpi']
 
         _df[['from_myr']] = scaler.fit_transform(_df[['from_myr']])
         _temp_scaler = MinMaxScaler()
@@ -148,7 +171,7 @@ def get_actual_predicted_graph():
 
         _df = np.array(_df[['from_myr', 'cpi', 'gdp']]).reshape(-1, 3)
 
-        x, y = _split_x_y(_df, WINDOW_SIZE)
+        x, y = _split_x_y(_df, WINDOW_SIZE, include_cpi=include_cpi, include_gdp=include_gdp)
 
         if algorithm == "LSTM":
             x = x.reshape(x.shape[0], x.shape[1], 1)
@@ -159,23 +182,23 @@ def get_actual_predicted_graph():
         _prev = x[-1]
 
         if algorithm == "POLYNOMIAL":   
-            poly = PolynomialFeatures(degree=WINDOW_SIZE, interaction_only=True)
+            poly = PolynomialFeatures(degree=WINDOW_SIZE + include_cpi + include_gdp, interaction_only=True)
             x = poly.fit_transform(x)
 
         y = y.reshape(y.shape[0], 1)
         return x, y, _prev
 
-    def _forecast_next_n_days(model, input_data, prev_data, n):
+    def _forecast_next_n_days(model, include_cpi, include_gdp, input_data, prev_data, n):
         results = []
         model_inputs = input_data
         if algorithm == "POLYNOMIAL":
             prev = prev_data
-            poly = PolynomialFeatures(degree=WINDOW_SIZE, interaction_only=True)
+            poly = PolynomialFeatures(degree=WINDOW_SIZE + include_cpi + include_gdp, interaction_only=True)
 
         for _ in range(n):
             # Process the inputs
             if algorithm == "LSTM":
-                model_inputs = model_inputs.reshape(1, model_inputs.shape[0], model_inputs.shape[1])
+                model_inputs = model_inputs.reshape(1, model_inputs.shape[0], 1)
             elif algorithm == "LINEAR" or algorithm == "LASSO" or algorithm == "RIDGE":
                 model_inputs = model_inputs.reshape(1, model_inputs.shape[0])
             elif  algorithm == "POLYNOMIAL":   
@@ -187,10 +210,14 @@ def get_actual_predicted_graph():
             # Track it in the windows)
 
             if algorithm == "POLYNOMIAL":
-                prev = np.concatenate((prev[0], predicted_data))
+                prev = prev[0]
+                prev = np.insert(prev, WINDOW_SIZE, predicted_data[0])
+                prev.reshape(prev.shape[0], 1)
                 prev = prev[1:]
             else:
-                model_inputs = np.concatenate((model_inputs[0], predicted_data))
+                model_inputs = model_inputs[0]
+                model_inputs = np.insert(model_inputs, WINDOW_SIZE, predicted_data[0])
+                model_inputs.reshape(model_inputs.shape[0], 1)
                 model_inputs = model_inputs[1:]
 
             results.append(predicted_data[0])
@@ -217,24 +244,37 @@ def get_actual_predicted_graph():
     try:
         currency_code = request.args.get('currency_code', None)
         algorithm = request.args.get('algorithm', 'LSTM')
+        include_cpi = request.args.get('include_cpi', 'false') == 'true'
+        include_gdp = request.args.get('include_gdp', 'false') == 'true'
+
         # Load the dataset, model and scaler
-        if algorithm == "LSTM":
-            model = load_model(os.path.join(MODEL_SAVE_PATH, currency_code, algorithm, MODEL_FILENAME))
+        model_location = os.path.join(MODEL_SAVE_PATH, currency_code, algorithm)
+        if include_cpi and include_gdp:
+            model_location = os.path.join(model_location, MODEL_WITH_GDP_AND_CPI, MODEL_FILENAME)
+        elif include_cpi:
+            model_location = os.path.join(model_location, MODEL_WITH_CPI, MODEL_FILENAME)
+        elif include_gdp:
+            model_location = os.path.join(model_location, MODEL_WITH_GDP, MODEL_FILENAME)
         else:
-            model = joblib.load(os.path.join(MODEL_SAVE_PATH, currency_code, algorithm, MODEL_FILENAME))
+            model_location = os.path.join(model_location, MODEL_ONLY_RATE, MODEL_FILENAME)
+
+        if algorithm == "LSTM":
+            model = load_model(model_location)
+        else:
+            model = joblib.load(model_location)
         scaler = scalers[currency_code]
 
         # Skip the first n, window size in which it can't make predictions on it
-        _df = df[df['currency_code'] == currency_code]
+        _df = df[df['currency_code'] == currency_code].reset_index(drop=True)
         date = _df["date"].tolist()[WINDOW_SIZE:]
 
         # Data Preprocessing
-        x, y, prev_data = _preprocess_data(_df, scaler, algorithm)
+        x, y, prev_data = _preprocess_data(_df, scaler, algorithm, include_cpi=include_cpi, include_gdp=include_gdp)
         y_pred = model.predict(x)
         y_pred = y_pred.reshape(y_pred.shape[0], 1)
 
         # Predict next n days currency rate
-        future_forecast = _forecast_next_n_days(model, x[-1], prev_data, FORECAST_DAYS)
+        future_forecast = _forecast_next_n_days(model, include_cpi, include_gdp, x[-1], prev_data, FORECAST_DAYS)
         y_pred = np.concatenate((y_pred, future_forecast))
 
         # Transform back to the normal values

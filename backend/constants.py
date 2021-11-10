@@ -5,6 +5,11 @@ DATA_FILENAME = "MYR-ForeignCurrency.csv"
 CPI_FILENAME = "Consumer_Price_Index_CPI.xlsx"
 DOWNLOAD_DIR = "/home/user/Downloads"
 
+MODEL_WITH_CPI = "CPI"
+MODEL_WITH_GDP = "GDP"
+MODEL_WITH_GDP_AND_CPI = "CPI_GDP"
+MODEL_ONLY_RATE = "RATE_ONLY"
+
 MODEL_SAVE_PATH = "./model"
 MODEL_FILENAME = "model"
-WINDOW_SIZE = 4
+WINDOW_SIZE = 3
