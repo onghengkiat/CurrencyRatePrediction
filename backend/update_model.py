@@ -4,10 +4,10 @@ from modeltrainer import ModelTrainer
 import pandas as pd
 from constants import MODEL_WITH_CPI, MODEL_WITH_GDP, MODEL_WITH_GDP_AND_CPI, MODEL_ONLY_RATE
 
-# scraper = WebScraper(CURRENCY_EXCHANGE_RATE_LINK, CPI_LINK, CPI_FILENAME, GDP_LINK, DOWNLOAD_DIR)
-# df = scraper.get_df()
-# df.to_csv(DATA_FILENAME)
-df = pd.read_csv(DATA_FILENAME, index_col=0)
+scraper = WebScraper(CURRENCY_EXCHANGE_RATE_LINK, CPI_LINK, CPI_FILENAME, GDP_LINK, DOWNLOAD_DIR)
+df = scraper.get_df()
+df.to_csv(DATA_FILENAME)
+# df = pd.read_csv(DATA_FILENAME, index_col=0)
 currency_codes = df['currency_code'].unique()
 malaysia_df = df[df['currency_code'] == 'MYR'].reset_index(drop=True)
 for currency_code in currency_codes:
