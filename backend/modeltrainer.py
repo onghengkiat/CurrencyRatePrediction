@@ -180,7 +180,7 @@ class ModelTrainer():
 
     def _split_x_y(data, look_back, include_cpi=False, include_gdp=False):
       datax, datay = [],[]
-      for i in range(len(data)-look_back-1):
+      for i in range(len(data)-look_back):
         datax.append(data[i:(i + look_back), 0])
         if include_cpi:
           datax[i] = np.append(datax[i], data[i + look_back, 1])
@@ -391,7 +391,7 @@ class ModelTrainer():
     def _plot_actual_predict_graph(y_test, y_pred, currency_code, window_size):
       plt.figure(figsize=(15, 10))
       plt.subplot(2, 1, 1)
-      plt.title(f'Foreign Exchange Rate of MYR-{currency_code} with Window Size of {window_size} ({self.algorithm})')
+      plt.title(f'Foreign Exchange Rate of MYR-{currency_code} with Window Size of {window_size}')
       plt.plot(y_test, label = 'Actual', color = 'blue')
       plt.plot(y_pred, label = 'Predicted', color = 'orange')
       plt.legend()
@@ -415,6 +415,8 @@ class ModelTrainer():
         feat_importances = pd.Series(self.model.coef_, index=_index)
 
       plt.subplot(2, 1, 2)
+
+      plt.title(f'Feature Importance')
       feat_importances.plot(kind='barh')
 
     if verbose:

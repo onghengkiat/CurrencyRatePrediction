@@ -7,7 +7,7 @@ import './Dataset.css'
 import { BACKEND_SERVER_ERROR } from '../../constants/error';
 
 async function fetchDashboardData() {
-    return fetch(`${URL_PREFIX}dashboard`, {
+    return fetch(`${URL_PREFIX}dataset`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'

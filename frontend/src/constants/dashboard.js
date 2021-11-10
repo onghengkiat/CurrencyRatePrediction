@@ -10,11 +10,11 @@ export const columns = [
     },
 
     {
-        title: "CPI",
+        title: "CPI (Prev Month)",
         field: "cpi",
     },
     {
-        title: "GDP",
+        title: "GDP Growth Rate (Prev Year)",
         field: "gdp",
     },
     {
@@ -66,9 +66,5 @@ export const columns = [
                 );
             }
         }
-    },
-    {
-        title: "Prediction",
-        field: "is_prediction",
     },
 ]

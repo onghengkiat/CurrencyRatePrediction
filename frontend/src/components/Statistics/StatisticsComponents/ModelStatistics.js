@@ -9,7 +9,7 @@ import BigNumber from './ChartTemplate/BigNumber';
 import { ImStatsDots, ImStatsBars } from 'react-icons/im';
 import { FaSquareRootAlt } from 'react-icons/fa';
 
-export default function ModelStatistics({ pic, modelPerformance }){
+export default function ModelStatistics({ pic, modelPerformance, algorithm }){
     return (
         <div>
             <Row>
@@ -18,7 +18,7 @@ export default function ModelStatistics({ pic, modelPerformance }){
                         <Col>
                             <SiProbot id="dashboard-title-icon"/>
                             <h5><b>Predictive Model Performance</b></h5>
-                            <h5 className="text-muted"><b>Algorithm: Long Short Term Memory (LSTM)</b></h5>
+                            <h5 className="text-muted"><b>Algorithm: {algorithm}</b></h5>
                         </Col>
                     </Row>
                 </Container>

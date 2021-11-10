@@ -1,4 +1,4 @@
-from app import app, df, scalers, currency_codes
+from app import app, df, scalers, currency_codes, malaysia_df
 from flask import request, jsonify, send_file
 from app.util import missing_param_handler
 from constants import MODEL_SAVE_PATH, WINDOW_SIZE, MODEL_FILENAME
@@ -12,141 +12,61 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from tensorflow.keras.models import load_model
 from modeltrainer import ModelTrainer
-
-def transform_json(from_myr, cpi, gdp, date_string, currency_code, prev_data, is_prediction=False, to_myr=None):
-    rate_changed_to_myr = 0
-    rate_is_increased_to_myr = True
-    rate_changed_from_myr = 0
-    rate_is_increased_from_myr = True
-    if to_myr is None:
-        to_myr = round(1.0/from_myr, 4)
-
-    if prev_data.get(currency_code, None) is not None:
-        # getting the last data from the windows of data captured
-        last_data = prev_data[currency_code][-1]
-        rate_changed_to_myr = round( ((to_myr - last_data["to_myr"])/last_data["to_myr"]) * 100, 4)
-        if rate_changed_to_myr < 0:
-            rate_is_increased_to_myr = False
-            rate_changed_to_myr = round(-1.0 * rate_changed_to_myr, 4)
-
-        rate_changed_from_myr = round( ((from_myr - last_data["from_myr"])/last_data["from_myr"]) * 100, 4)
-        if rate_changed_from_myr < 0:
-            rate_is_increased_from_myr = False
-            rate_changed_from_myr = round(-1.0 * rate_changed_from_myr, 4)
-
-    return {
-        "date": date_string,
-        "currency_code": currency_code,
-        "to_myr": to_myr,
-        "from_myr": from_myr,
-        "rate_changed_to_myr": rate_changed_to_myr,
-        "rate_is_increased_to_myr": rate_is_increased_to_myr,
-        "rate_changed_from_myr": rate_changed_from_myr,
-        "rate_is_increased_from_myr": rate_is_increased_from_myr,
-        "gdp": gdp,
-        "cpi": cpi,
-        "is_prediction": is_prediction,
-    }
-
-def put_into_window(prev_data, cur_data, currency_code):
-    if prev_data.get(currency_code, None) is None:
-        prev_data[currency_code] = [cur_data]
-    else:
-        if len(prev_data[currency_code]) < WINDOW_SIZE:
-            prev_data[currency_code].append(cur_data)
-        else:
-            prev_data[currency_code] = prev_data[currency_code][1:]
-            prev_data[currency_code].append(cur_data)
-    return prev_data
-
-
-def split_x_y(data, look_back):
-    datax, datay = [],[]
-    for i in range(len(data)-look_back):
-        datax.append(data[i:(i + look_back), 0])
-        datay.append(data[i + look_back, 0])
-    datax = np.array(datax)
-    datay = np.array(datay)
-    return datax.reshape(datax.shape[0], datax.shape[1], 1), datay.reshape(-1, 1)
-
-def preprocess_data(list_of_dict, scaler):
-    # [{
-    #     "date": datetime.strptime(row['date'], '%d %b %Y').strftime('%Y-%m-%d'),
-    #     "currency_code": currency_code,
-    #     "to_myr": to_myr,
-    #     "from_myr": from_myr,
-    #     "rate_changed_to_myr": rate_changed_to_myr,
-    #     "rate_is_increased_to_myr": rate_is_increased_to_myr,
-    #     "rate_changed_from_myr": rate_changed_from_myr,
-    #     "rate_is_increased_from_myr": rate_is_increased_from_myr,
-    # }, ...]
-    _model_input = []
-    for d in list_of_dict:
-        _model_input.append([d["from_myr"]])
-    _model_input = scaler.transform(_model_input)
-    return _model_input.reshape(_model_input.shape[0], _model_input.shape[1], 1)
-
-def forecast_next_n_days(model, scaler, currency_code, prev_data, begin_date, n, only_from_myr=False):
-    data = []
-    cur_date = begin_date
-    model_inputs = prev_data
-    for i in range(n):
-        if only_from_myr:
-            # Process the inputs
-            model_inputs = model_inputs.reshape(1, model_inputs.shape[0], model_inputs.shape[1])
-            from_myr_predicted = model.predict(model_inputs)
-
-            # Track it in the windows
-            model_inputs = np.concatenate((model_inputs[0], from_myr_predicted))
-            model_inputs = model_inputs[1:]
-
-            data.append(from_myr_predicted[0])
-        else:
-            cur_date = cur_date + timedelta(days=1)
-            cur_date_string = cur_date.strftime('%Y-%m-%d')
-            model_inputs = preprocess_data(prev_data[currency_code], scaler)
-
-            from_myr_predicted = model.predict(model_inputs)
-            from_myr_predicted = round(float(scaler.inverse_transform(from_myr_predicted)[0][0]), 4)
-
-            cur_data = transform_json(from_myr_predicted, prev_data[currency_code][-1]['cpi'], prev_data[currency_code][-1]['gdp'], cur_date_string, currency_code, prev_data, is_prediction=True)
-
-            # Track it in the window
-            prev_data = put_into_window(prev_data, cur_data, currency_code)
-            data.append(cur_data)
-    return data
-
+from sklearn.preprocessing import MinMaxScaler, PolynomialFeatures
+import joblib
 
 #######
 # API #
 #######
-@app.route("/dashboard")
+@app.route("/dataset")
 @cross_origin(origin='*')
 @missing_param_handler
 def get_dashboard():
-    algorithm = request.args.get('algorithm', 'LSTM')
+    def _transform_json(row, prev_data):
+        from_myr = row['from_myr']
+        currency_code = row['currency_code']
+        rate_changed_to_myr = 0
+        rate_is_increased_to_myr = True
+        rate_changed_from_myr = 0
+        rate_is_increased_from_myr = True
+        to_myr = round(1.0/from_myr, 4)
+
+        if prev_data.get(currency_code, None) is not None:
+            # getting the last data from the windows of data captured
+            last_data = prev_data[currency_code]
+            rate_changed_to_myr = round( ((to_myr - last_data["to_myr"])/last_data["to_myr"]) * 100, 4)
+            if rate_changed_to_myr < 0:
+                rate_is_increased_to_myr = False
+                rate_changed_to_myr = round(-1.0 * rate_changed_to_myr, 4)
+
+            rate_changed_from_myr = round( ((from_myr - last_data["from_myr"])/last_data["from_myr"]) * 100, 4)
+            if rate_changed_from_myr < 0:
+                rate_is_increased_from_myr = False
+                rate_changed_from_myr = round(-1.0 * rate_changed_from_myr, 4)
+
+        return {
+            "date": row['date'].strftime('%Y-%m-%d'),
+            "currency_code": currency_code,
+            "to_myr": to_myr,
+            "from_myr": from_myr,
+            "rate_changed_to_myr": rate_changed_to_myr,
+            "rate_is_increased_to_myr": rate_is_increased_to_myr,
+            "rate_changed_from_myr": rate_changed_from_myr,
+            "rate_is_increased_from_myr": rate_is_increased_from_myr,
+            "gdp": round(row['gdp'], 4),
+            "cpi": round(row['cpi'], 4),
+        }
+
     try: 
         data = []
         prev_data = {}
-        cur_date = None
-        for i, row in df.iterrows():
-            cur_date = row['date']
-            cur_date_string = cur_date.strftime('%Y-%m-%d')
+        for _, row in df.iterrows():
                 
-            cur_data = transform_json(row['from_myr'], row['cpi'], row['gdp'], cur_date_string, row['currency_code'], prev_data, to_myr=row['from_myr'])
+            cur_data = _transform_json(row, prev_data)
             data.append(cur_data)
 
             # Track it in the window
-            prev_data = put_into_window(prev_data, cur_data, row['currency_code'])
-
-        if cur_date is None:
-            return jsonify({"message": "Successful", "data": data}), 200
-
-        # Predict next n days currency rate
-        for currency_code in currency_codes:
-            model = load_model(os.path.join(MODEL_SAVE_PATH, currency_code, algorithm, MODEL_FILENAME))
-            scaler = scalers[currency_code]
-            data = data + forecast_next_n_days(model, scaler, currency_code, prev_data, cur_date, 7)
+            prev_data[row['currency_code']] = cur_data
                 
         data.sort(key=itemgetter('date'), reverse=True)
         return jsonify({"message": "Successful", "data": data}), 200
@@ -205,6 +125,78 @@ def get_model_performance():
 @cross_origin(origin='*')
 @missing_param_handler
 def get_actual_predicted_graph():
+    def _preprocess_data(_df, scaler, algorithm):
+        def _split_x_y(data, look_back, include_cpi=False, include_gdp=False):
+            datax, datay = [],[]
+            for i in range(len(data)-look_back):
+                datax.append(data[i:(i + look_back), 0])
+                if include_cpi:
+                    datax[i] = np.append(datax[i], data[i + look_back, 1])
+                if include_gdp:
+                    datax[i] = np.append(datax[i], data[i + look_back, 2])
+                datay.append(data[i + look_back, 0])
+            return np.array(datax), np.array(datay)
+
+        _df['gdp'] = malaysia_df['gdp'] - df['gdp']
+        _df['cpi'] = malaysia_df['cpi'] - df['cpi']
+
+        _df[['from_myr']] = scaler.fit_transform(_df[['from_myr']])
+        _temp_scaler = MinMaxScaler()
+        _df[['cpi']] = _temp_scaler.fit_transform(_df[['cpi']])
+        _temp_scaler = MinMaxScaler()
+        _df[['gdp']] = _temp_scaler.fit_transform(_df[['gdp']])
+
+        _df = np.array(_df[['from_myr', 'cpi', 'gdp']]).reshape(-1, 3)
+
+        x, y = _split_x_y(_df, WINDOW_SIZE)
+
+        if algorithm == "LSTM":
+            x = x.reshape(x.shape[0], x.shape[1], 1)
+        elif (algorithm == "POLYNOMIAL" or algorithm == "LINEAR" or 
+            algorithm == "LASSO" or algorithm == "RIDGE"):
+            x = x.reshape(x.shape[0], x.shape[1])
+
+        _prev = x[-1]
+
+        if algorithm == "POLYNOMIAL":   
+            poly = PolynomialFeatures(degree=WINDOW_SIZE, interaction_only=True)
+            x = poly.fit_transform(x)
+
+        y = y.reshape(y.shape[0], 1)
+        return x, y, _prev
+
+    def _forecast_next_n_days(model, input_data, prev_data, n):
+        results = []
+        model_inputs = input_data
+        if algorithm == "POLYNOMIAL":
+            prev = prev_data
+            poly = PolynomialFeatures(degree=WINDOW_SIZE, interaction_only=True)
+
+        for _ in range(n):
+            # Process the inputs
+            if algorithm == "LSTM":
+                model_inputs = model_inputs.reshape(1, model_inputs.shape[0], model_inputs.shape[1])
+            elif algorithm == "LINEAR" or algorithm == "LASSO" or algorithm == "RIDGE":
+                model_inputs = model_inputs.reshape(1, model_inputs.shape[0])
+            elif  algorithm == "POLYNOMIAL":   
+                prev = prev.reshape(1, prev.shape[0])
+                model_inputs = poly.fit_transform(prev)
+            
+            predicted_data = model.predict(model_inputs)
+
+            # Track it in the windows)
+
+            if algorithm == "POLYNOMIAL":
+                prev = np.concatenate((prev[0], predicted_data))
+                prev = prev[1:]
+            else:
+                model_inputs = np.concatenate((model_inputs[0], predicted_data))
+                model_inputs = model_inputs[1:]
+
+            results.append(predicted_data[0])
+        results = np.array(results)
+        results = results.reshape(results.shape[0], 1)
+        return results
 
     def _plot_actual_predict_graph(y_test, y_pred, date, currency_code):
         # Visualizing the results
@@ -226,7 +218,10 @@ def get_actual_predicted_graph():
         currency_code = request.args.get('currency_code', None)
         algorithm = request.args.get('algorithm', 'LSTM')
         # Load the dataset, model and scaler
-        model = load_model(os.path.join(MODEL_SAVE_PATH, currency_code, algorithm, MODEL_FILENAME))
+        if algorithm == "LSTM":
+            model = load_model(os.path.join(MODEL_SAVE_PATH, currency_code, algorithm, MODEL_FILENAME))
+        else:
+            model = joblib.load(os.path.join(MODEL_SAVE_PATH, currency_code, algorithm, MODEL_FILENAME))
         scaler = scalers[currency_code]
 
         # Skip the first n, window size in which it can't make predictions on it
@@ -234,23 +229,24 @@ def get_actual_predicted_graph():
         date = _df["date"].tolist()[WINDOW_SIZE:]
 
         # Data Preprocessing
-        datax = scaler.transform(np.array(_df["from_myr"]).reshape(-1, 1))
-        datax, datay = split_x_y(datax, WINDOW_SIZE)
+        x, y, prev_data = _preprocess_data(_df, scaler, algorithm)
+        y_pred = model.predict(x)
+        y_pred = y_pred.reshape(y_pred.shape[0], 1)
 
-        y_pred = model.predict(datax)
         # Predict next n days currency rate
-        future_forecast = forecast_next_n_days(model, scaler, currency_code, datax[-1], date[-1], FORECAST_DAYS, only_from_myr=True)
+        future_forecast = _forecast_next_n_days(model, x[-1], prev_data, FORECAST_DAYS)
         y_pred = np.concatenate((y_pred, future_forecast))
 
         # Transform back to the normal values
         y_pred = scaler.inverse_transform(y_pred)
-        y_actual = scaler.inverse_transform(datay)
+        y_actual = scaler.inverse_transform(y)
 
-        # Append date and data for the 30 days forecast
-        for i in range(FORECAST_DAYS):
+        # Append date and data for actual for the 30 days forecast
+        for _ in range(FORECAST_DAYS):
             date.append(date[-1] + timedelta(days=1))
+            # Actual datapoints will be empty
             y_actual = np.concatenate((y_actual, np.array([[None]])))
-
+        
         # Plot the actual predict graph and save it to be sent to frontend
         _plot_actual_predict_graph(y_actual, y_pred, date, currency_code)
         tmpdir = tempfile.mkdtemp() 

@@ -6,6 +6,7 @@ from sklearn.preprocessing import MinMaxScaler
 app = Flask(__name__)
 
 df = pd.read_csv(DATA_FILENAME, index_col=0)
+malaysia_df = df[df['currency_code'] == 'MYR']
 df = df[df['currency_code'] != 'MYR']
 
 df["date"] = pd.to_datetime(df["date"], format='%Y-%m-%d')

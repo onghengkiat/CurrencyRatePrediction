@@ -229,7 +229,7 @@ export default function Statistics({ setError, setLoading }){
         setLoading(false);
       }
       fetchData();
-    }, [currencyCode]);
+    }, [currencyCode, algorithm]);
     
     return (
         <Container fluid>
@@ -238,7 +238,7 @@ export default function Statistics({ setError, setLoading }){
             </div>
             <div className="right-content">
                 <DatasetStatistics currencyCode={ currencyCode } statistics={ statistics } pic2={ pic2 }/>
-                <ModelStatistics pic={ pic } modelPerformance={ modelPerformance }/>
+                <ModelStatistics pic={ pic } modelPerformance={ modelPerformance } algorithm={ algorithm }/>
             </div>
         </Container>
     );

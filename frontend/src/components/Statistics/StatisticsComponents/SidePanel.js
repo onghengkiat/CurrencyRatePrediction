@@ -16,7 +16,7 @@ export default function SidePanel({ currencyList, setCurrencyCode, algorithmList
             <div id="side-panel-title-container">
                 <div id="side-panel-title">Control Panel</div>
             </div>
-            <Form.Group controlId="exampleForm.SelectCustom">
+            <Form.Group>
                 <Form.Label>Select Currency Code : </Form.Label>
                 <Form.Control as="select" ref={ currency_code_field } custom>
                     {
