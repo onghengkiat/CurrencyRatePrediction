@@ -8,6 +8,15 @@ export const columns = [
         title: "Currency Code",
         field: "currency_code",
     },
+
+    {
+        title: "CPI",
+        field: "cpi",
+    },
+    {
+        title: "GDP",
+        field: "gdp",
+    },
     {
         title: "To MYR",
         field: "to_myr",

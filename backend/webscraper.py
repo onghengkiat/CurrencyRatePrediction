@@ -4,11 +4,10 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from requests import ConnectionError
-from operator import itemgetter
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import StaleElementReferenceException, ElementNotInteractableException
 import time
 import os
 import tempfile
@@ -304,10 +303,14 @@ class WebScraper:
                 except StaleElementReferenceException as e:
                     time.sleep(1)
                     print(f"Trial {i+1}")
+                except ElementNotInteractableException as e:
+                    time.sleep(1)
+                    print(f"Trial {i+1}")
         
         driver = webdriver.Chrome("chromedriver_linux64/chromedriver")
         driver.get(self.CPI_URL)
-
+        # maximize browser window
+        driver.maximize_window()
         
 
         WebDriverWait(driver, 60).until(
@@ -501,20 +504,17 @@ class WebScraper:
 
         # Export to excel file
         WebDriverWait(driver, 60).until(
-            lambda driver : driver.find_elements_by_class_name("PPContent")
+            lambda driver : driver.find_elements_by_class_name("PPContextPanel")
         )
-        time.sleep(2)
-        ppcontents = driver.find_elements_by_class_name("PPContent")
-        for ppcontent in ppcontents:
-            if ppcontent.text == "Export":
-                ppcontent.click()
-                break
-
+        time.sleep(10)
+        ppcontents = driver.find_element_by_class_name("PPContextPanel")
+        click_changing_button(ppcontents, "PPContent", position=5)
+        time.sleep(3)
         WebDriverWait(driver, 60).until(
             lambda driver : driver.find_element_by_id("Xlsx")
         )
         driver.find_element_by_id("Xlsx").click()
-        time.sleep(20)
+        time.sleep(15)
 
     def get_df(self):
         print("Scraping Currency Exchange Rate Data...")
@@ -540,7 +540,16 @@ class WebScraper:
         # Sort it by currency code followed by dates
         df.sort_values(["currency_code", "date"], ascending=[True, True], inplace=True)
         print("Scraping CPI Data...")
-        self._scrap_cpi()
+
+        connection_trial = 0
+        connection_is_failed = True
+        while connection_is_failed:
+            try:
+                self._scrap_cpi()
+                connection_is_failed = False
+            except Exception as e:
+                connection_trial += 1
+                print(f"Connection failed for {connection_trial} trials.")
 
         # Move the downloaded file to the temp app directory
         # Which will be deleted after being loaded
@@ -561,7 +570,7 @@ class WebScraper:
         for key, val in self.CPI_MAPPING.items():
             if key not in cpi_df["country_name"].unique():
                 print(key + " is not found in the CPI database")
-                df = df[df['currency_code'] != self.CPI_MAPPING[key]["currency_code"]]
+                df = df[df['currency_code'] != val["currency_code"]]
 
         df["month"] = df.date.dt.month
         df["year"] = df.date.dt.year

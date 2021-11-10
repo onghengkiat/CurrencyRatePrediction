@@ -1,18 +1,19 @@
-from app import app, df, models, scalers, currency_codes
-from flask import request, jsonify, send_file, make_response
+from app import app, df, scalers, currency_codes
+from flask import request, jsonify, send_file
 from app.util import missing_param_handler
-import pandas as pd
-from constants import MODEL_SAVE_PATH, WINDOW_SIZE
+from constants import MODEL_SAVE_PATH, WINDOW_SIZE, MODEL_FILENAME
 from operator import itemgetter
-from datetime import datetime, timedelta
+from datetime import timedelta
 import os
 import tempfile
 from flask_cors import cross_origin
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+from tensorflow.keras.models import load_model
+from modeltrainer import ModelTrainer
 
-def transform_json(from_myr, date_string, currency_code, prev_data, is_prediction=False, to_myr=None):
+def transform_json(from_myr, cpi, gdp, date_string, currency_code, prev_data, is_prediction=False, to_myr=None):
     rate_changed_to_myr = 0
     rate_is_increased_to_myr = True
     rate_changed_from_myr = 0
@@ -42,6 +43,8 @@ def transform_json(from_myr, date_string, currency_code, prev_data, is_predictio
         "rate_is_increased_to_myr": rate_is_increased_to_myr,
         "rate_changed_from_myr": rate_changed_from_myr,
         "rate_is_increased_from_myr": rate_is_increased_from_myr,
+        "gdp": gdp,
+        "cpi": cpi,
         "is_prediction": is_prediction,
     }
 
@@ -106,17 +109,22 @@ def forecast_next_n_days(model, scaler, currency_code, prev_data, begin_date, n,
             from_myr_predicted = model.predict(model_inputs)
             from_myr_predicted = round(float(scaler.inverse_transform(from_myr_predicted)[0][0]), 4)
 
-            cur_data = transform_json(from_myr_predicted, cur_date_string, currency_code, prev_data, is_prediction=True)
+            cur_data = transform_json(from_myr_predicted, prev_data[currency_code][-1]['cpi'], prev_data[currency_code][-1]['gdp'], cur_date_string, currency_code, prev_data, is_prediction=True)
 
             # Track it in the window
             prev_data = put_into_window(prev_data, cur_data, currency_code)
             data.append(cur_data)
     return data
 
+
+#######
+# API #
+#######
 @app.route("/dashboard")
 @cross_origin(origin='*')
 @missing_param_handler
 def get_dashboard():
+    algorithm = request.args.get('algorithm', 'LSTM')
     try: 
         data = []
         prev_data = {}
@@ -125,18 +133,18 @@ def get_dashboard():
             cur_date = row['date']
             cur_date_string = cur_date.strftime('%Y-%m-%d')
                 
-            cur_data = transform_json(row['from_myr'], cur_date_string, row['currency_code'], prev_data, to_myr=row['from_myr'])
+            cur_data = transform_json(row['from_myr'], row['cpi'], row['gdp'], cur_date_string, row['currency_code'], prev_data, to_myr=row['from_myr'])
+            data.append(cur_data)
 
             # Track it in the window
             prev_data = put_into_window(prev_data, cur_data, row['currency_code'])
-            data.append(cur_data)
 
         if cur_date is None:
             return jsonify({"message": "Successful", "data": data}), 200
 
         # Predict next n days currency rate
         for currency_code in currency_codes:
-            model = models[currency_code]
+            model = load_model(os.path.join(MODEL_SAVE_PATH, currency_code, algorithm, MODEL_FILENAME))
             scaler = scalers[currency_code]
             data = data + forecast_next_n_days(model, scaler, currency_code, prev_data, cur_date, 7)
                 
@@ -152,7 +160,8 @@ def get_dashboard():
 @missing_param_handler
 def get_model_actual_predicted_graph():
     currency_code = request.args.get('currency_code', None)
-    directory = os.path.join(MODEL_SAVE_PATH, currency_code)
+    algorithm = request.args.get('algorithm', 'LSTM')
+    directory = os.path.join(MODEL_SAVE_PATH, currency_code, algorithm)
 
     filename = ""
     for f in os.listdir(directory):
@@ -171,7 +180,8 @@ def get_model_actual_predicted_graph():
 @missing_param_handler
 def get_model_performance():
     currency_code = request.args.get('currency_code', None)
-    directory = os.path.join(MODEL_SAVE_PATH, currency_code)
+    algorithm = request.args.get('algorithm', 'LSTM')
+    directory = os.path.join(MODEL_SAVE_PATH, currency_code, algorithm)
 
     filename = ""
     for f in os.listdir(directory):
@@ -200,8 +210,8 @@ def get_actual_predicted_graph():
         # Visualizing the results
         plt.figure(figsize=(10, 5))
         plt.title(f'Foreign Exchange Rate of MYR-{currency_code}')
-        plt.plot_date(date, y_test, '-g', label = 'Actual')
-        plt.plot_date(date, y_pred, '-r', label = 'Predicted')
+        plt.plot_date(date, y_test, fmt='-', color = 'blue', label = 'Actual')
+        plt.plot_date(date, y_pred, fmt='-', color = 'orange', label = 'Predicted')
         plt.legend()
 
         # Specify formatter for the dates on X-axis
@@ -214,8 +224,9 @@ def get_actual_predicted_graph():
     FORECAST_DAYS = 30
     try:
         currency_code = request.args.get('currency_code', None)
+        algorithm = request.args.get('algorithm', 'LSTM')
         # Load the dataset, model and scaler
-        model = models[currency_code]
+        model = load_model(os.path.join(MODEL_SAVE_PATH, currency_code, algorithm, MODEL_FILENAME))
         scaler = scalers[currency_code]
 
         # Skip the first n, window size in which it can't make predictions on it
@@ -260,27 +271,31 @@ def get_actual_predicted_graph():
 @missing_param_handler
 def get_statistic():
         currency_code = request.args.get('currency_code', None)
-        _df = df[df['currency_code'] == currency_code]
-        _df.reset_index(inplace=True)
-        min_rate = _df['from_myr'][0]
-        min_date = _df['date'][0].strftime('%d %b %Y')
-        max_rate = _df['from_myr'][0]
-        max_date = _df['date'][0].strftime('%d %b %Y')
+        try: 
+            _df = df[df['currency_code'] == currency_code]
+            _df.reset_index(inplace=True)
+            min_rate = _df['from_myr'][0]
+            min_date = _df['date'][0].strftime('%d %b %Y')
+            max_rate = _df['from_myr'][0]
+            max_date = _df['date'][0].strftime('%d %b %Y')
 
-        for i, row in _df.iterrows():
-            if row['from_myr'] <= min_rate:
-                min_rate = row['from_myr']
-                min_date = row['date'].strftime('%d %b %Y')
-            elif row['from_myr'] >= max_rate:
-                max_rate = row['from_myr']
-                max_date = row['date'].strftime('%d %b %Y')
-        data = {
-            "min_rate": min_rate,
-            "min_date": min_date,
-            "max_rate": max_rate,
-            "max_date": max_date,
-        }
-        return jsonify({"message": "Successful", "data": data}), 200
+            for _, row in _df.iterrows():
+                if row['from_myr'] <= min_rate:
+                    min_rate = row['from_myr']
+                    min_date = row['date'].strftime('%d %b %Y')
+                elif row['from_myr'] >= max_rate:
+                    max_rate = row['from_myr']
+                    max_date = row['date'].strftime('%d %b %Y')
+            data = {
+                "min_rate": min_rate,
+                "min_date": min_date,
+                "max_rate": max_rate,
+                "max_date": max_date,
+            }
+            return jsonify({"message": "Successful", "data": data}), 200
+        except Exception as e:
+            print(e)
+            return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
 
 @app.route("/currencylist")
 @cross_origin(origin='*')
@@ -288,6 +303,17 @@ def get_statistic():
 def get_currency_list():
     try: 
         return jsonify({"message": "Successful", "data": currency_codes}), 200
+    except Exception as e:
+        print(e)
+        return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
+
+
+@app.route("/algorithmlist")
+@cross_origin(origin='*')
+@missing_param_handler
+def get_algorithm_list():
+    try: 
+        return jsonify({"message": "Successful", "data": ModelTrainer.ALGORITHMS_AVAILABLE}), 200
     except Exception as e:
         print(e)
         return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400

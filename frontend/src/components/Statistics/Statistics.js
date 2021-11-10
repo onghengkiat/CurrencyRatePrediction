@@ -9,8 +9,8 @@ import DatasetStatistics from './StatisticsComponents/DatasetStatistics';
 import { BACKEND_SERVER_ERROR } from '../../constants/error';
 
 
-async function fetchActualPredGraph(currencyCode) {
-    return fetch(`${URL_PREFIX}graph/statistic?currency_code=${currencyCode}`, {
+async function fetchActualPredGraph(currencyCode, algorithm) {
+    return fetch(`${URL_PREFIX}graph/statistic?currency_code=${currencyCode}&algorithm=${algorithm}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -35,8 +35,8 @@ async function fetchActualPredGraph(currencyCode) {
     })
 }
 
-async function fetchModelPerformanceGraph(currencyCode) {
-  return fetch(`${URL_PREFIX}graph/modelperformance?currency_code=${currencyCode}`, {
+async function fetchModelPerformanceGraph(currencyCode, algorithm) {
+  return fetch(`${URL_PREFIX}graph/modelperformance?currency_code=${currencyCode}&algorithm=${algorithm}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json'
@@ -61,8 +61,8 @@ async function fetchModelPerformanceGraph(currencyCode) {
   })
 }
 
-async function fetchModelPerformance(currencyCode) {
-  return fetch(`${URL_PREFIX}modelperformance?currency_code=${currencyCode}`, {
+async function fetchModelPerformance(currencyCode, algorithm) {
+  return fetch(`${URL_PREFIX}modelperformance?currency_code=${currencyCode}&algorithm=${algorithm}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json'
@@ -136,12 +136,39 @@ async function fetchCurrencyList() {
     })
 }
 
+async function fetchAlgorithmList() {
+  return fetch(`${URL_PREFIX}algorithmlist`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    if (response.ok) {
+      return response.json();
+    }
+    throw response;
+  })
+  .then(data => data.data)
+  .catch(response => { 
+    // case when backend server is working, and sent frontend the error message
+    if (response.isError) {
+      return response.json();
+    } else {
+      // case when backend server is not working fine and didn't send any useful info to frontend
+      return BACKEND_SERVER_ERROR;
+    }
+  })
+}
+
 export default function Statistics({ setError, setLoading }){
 
     const [pic, setPic] = useState();
     const [pic2, setPic2] = useState();
     const [currencyCode, setCurrencyCode] = useState("USD");
+    const [algorithm, setAlgorithm] = useState("LSTM");
     const [currencyList, setCurrencyList] = useState(["USD"]);
+    const [algorithmList, setAlgorithmList] = useState(["LSTM"]);
     const [statistics, setStatistics] = useState({});
     const [modelPerformance, setModelPerformance] = useState({});
   
@@ -151,7 +178,7 @@ export default function Statistics({ setError, setLoading }){
       async function fetchData() {
         setLoading(true);
 
-        const response = await fetchModelPerformanceGraph(currencyCode);
+        const response = await fetchModelPerformanceGraph(currencyCode, algorithm);
         if (response.isError){
           setError(response);
         } else {
@@ -175,7 +202,7 @@ export default function Statistics({ setError, setLoading }){
           setStatistics(data);
         }
 
-        const response4 = await fetchActualPredGraph(currencyCode);
+        const response4 = await fetchActualPredGraph(currencyCode, algorithm);
         if (response4.isError){
           setError(response4);
         } else {
@@ -183,12 +210,20 @@ export default function Statistics({ setError, setLoading }){
           setPic2(data);
         }
 
-        const response5 = await fetchModelPerformance(currencyCode);
+        const response5 = await fetchModelPerformance(currencyCode, algorithm);
         if (response5.isError){
           setError(response5);
         } else {
           const data = response5;
           setModelPerformance(data);
+        }
+
+        const response6 = await fetchAlgorithmList();
+        if (response6.isError){
+          setError(response6);
+        } else {
+          const data = response6;
+          setAlgorithmList(data);
         }
 
         setLoading(false);
@@ -199,7 +234,7 @@ export default function Statistics({ setError, setLoading }){
     return (
         <Container fluid>
             <div className="left-content">
-                <SidePanel currencyList={ currencyList } setCurrencyCode={ setCurrencyCode }/>
+                <SidePanel currencyList={ currencyList } setCurrencyCode={ setCurrencyCode } algorithmList={ algorithmList } setAlgorithm={ setAlgorithm }/>
             </div>
             <div className="right-content">
                 <DatasetStatistics currencyCode={ currencyCode } statistics={ statistics } pic2={ pic2 }/>
