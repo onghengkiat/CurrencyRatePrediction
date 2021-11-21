@@ -14,11 +14,13 @@ import tempfile
 from datetime import datetime
 
 class WebScraper:
-    def __init__(self, curex_url, cpi_url, cpi_filename, gdp_url, download_dir):
+    def __init__(self, curex_url, cpi_url, cpi_filename, gdp_url, interest_rate_url, download_dir, duration):
+        self.duration = duration
         self.CURRENCY_EXCHANGE_RATE_URL = curex_url
         self.CPI_URL = cpi_url
         self.CPI_FILENAME = cpi_filename
         self.GDP_URL = gdp_url
+        self.INTEREST_RATE_URL = interest_rate_url
         self.DOWNLOAD_DIR = download_dir
         self.CPI_MAPPING = {
             "United States": {
@@ -215,7 +217,7 @@ class WebScraper:
         # The month to be used in the query string in the website is based on index
         # Example October will be 9 in this case
         end_month = cur_time.month - 1
-        begin_year = end_year - 3
+        begin_year = end_year - self.duration
         begin_month = end_month
         return f"_bnm_exchange_rate_display_portlet_monthStart={begin_month}&_bnm_exchange_rate_display_portlet_yearStart={begin_year}&_bnm_exchange_rate_display_portlet_monthEnd={end_month}&_bnm_exchange_rate_display_portlet_yearEnd={end_year}"
 
@@ -349,7 +351,7 @@ class WebScraper:
                 period_layout = driver.find_element_by_class_name("RelPeriodLayout")
                 period_layout.find_elements_by_class_name("PPTextBoxInput")[1].send_keys(Keys.CONTROL + "a")
                 period_layout.find_elements_by_class_name("PPTextBoxInput")[1].send_keys(Keys.DELETE)
-                period_layout.find_elements_by_class_name("PPTextBoxInput")[1].send_keys(-37)
+                period_layout.find_elements_by_class_name("PPTextBoxInput")[1].send_keys(-self.duration*12 + 1)
 
                 WebDriverWait(driver, 60).until(
                     lambda driver : driver.find_element_by_class_name("RelPeriodLayout")
@@ -619,17 +621,56 @@ class WebScraper:
             if currency_code is None:
                 continue
 
-            for year in column_names[-4:]:
-                
+            for year in column_names[-(self.duration + 1):]:
                 # Year plus 1 because cur year is used to predict next year
                 df.loc[(df["year"] == int(year) + 1) & (df["currency_code"] == currency_code), "gdp"] = row[year]
         print("Done Scraping GDP Data.\n\n")
-        print(df[df.isna().any(axis=1)])
+
+        print("Scraping Interest Rate Data...")
+        connection_trial = 0
+        connection_is_failed = True
+        while connection_is_failed:
+            try:
+                downloaded = requests.get(self.INTEREST_RATE_URL)
+                connection_is_failed = False
+            except ConnectionError as e:
+                connection_trial += 1
+                print(f"Connection failed for {connection_trial} trials.")
+
+        # Header row starting from 4th row
+        interest_rate_df = pd.read_excel(downloaded.content, sheet_name="Data", skiprows=3)
+        interest_rate_df.reset_index(drop=True, inplace=True)
+        column_names = interest_rate_df.columns.tolist()[:-1]
+
+        # Search for the countries that are not found in the GDP database and filter their currency codes out from the df
+        for key, val in self.GDP_MAPPING.items():
+            if key not in interest_rate_df["Country Name"].unique():
+                print(key + " is not found in the Interest Rate database")
+                df = df[df["currency_code"] != self.GDP_MAPPING[key]]
+
+        df["interest_rate"] = np.nan
+        for i, row in interest_rate_df.iterrows():
+
+            currency_code = self.GDP_MAPPING.get(row["Country Name"], None)
+            if currency_code is None:
+                continue
+
+            for year in column_names[-(self.duration + 1):]:
+                
+                # Year plus 1 because cur year is used to predict next year
+                df.loc[(df["year"] == int(year) + 1) & (df["currency_code"] == currency_code), "interest_rate"] = row[year]
+        print("Done Scraping Interest Rate Data.\n\n")
+
         # Month and Year are not needed for visualization and analysis processes
         df.drop(["month", "year"], axis=1, inplace=True)
 
-        # Filling missing values with previous data
-        df.fillna(method="ffill", inplace=True)
+        # Filling missing values with previous value or next value
+        df['interest_rate'] = df.groupby(['currency_code'], sort=False)['interest_rate'].apply(lambda x: x.ffill().bfill())
+        df['gdp'] = df.groupby(['currency_code'], sort=False)['gdp'].apply(lambda x: x.ffill().bfill())
+        df['cpi'] = df.groupby(['currency_code'], sort=False)['cpi'].apply(lambda x: x.ffill().bfill())
+
+        # Remove countries that contain missing values for whole column
+        df.dropna(inplace=True)
 
         df.reset_index(drop=True, inplace=True)
 

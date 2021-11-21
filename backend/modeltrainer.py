@@ -3,7 +3,6 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-
 import keras.backend as K
 from sklearn.preprocessing import MinMaxScaler, PolynomialFeatures
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
@@ -14,25 +13,30 @@ from sklearn.linear_model import LinearRegression, Ridge, Lasso
 import os
 import joblib
 
+
 # Remove the false warning
 pd.options.mode.chained_assignment = None
+
 class ModelTrainer():
 
-  ALGORITHMS_AVAILABLE = ["LSTM", "POLYNOMIAL", "LINEAR", "LASSO", "RIDGE"]
+  ALGORITHMS_AVAILABLE = ["LSTM", "POLYNOMIAL", "LINEAR", "LASSO", "RIDGE", "XGBOOST"]
 
   def __init__(self, currency_code, model_filename, model_save_path, 
                model_with_cpi, model_with_gdp, model_with_gdp_and_cpi, model_only_rate,
-               algorithm="LSTM",  window_size=3, include_cpi=False, include_gdp=False, 
-               num_of_neuron=100, num_of_iteration=10, dropout=0, alpha=0.001, test_size=0.2):
+               algorithm="LSTM",  window_size=3, include_cpi=False, include_gdp=False, include_interest_rate=False, 
+               num_of_neuron=100, num_of_iteration=10, dropout=0, alpha=0.001, test_size=0.2,
+               compute_difference=True, predict_change=False):
     self.currency_code = currency_code
-    self.scaler = None
     self.model = None
+    self.compute_difference = compute_difference
+    self.predict_change = predict_change
 
     self.window_size = window_size
     self.algorithm = algorithm
     self.include_cpi = include_cpi
     self.include_gdp = include_gdp
-    self.num_of_feature = self.window_size + self.include_cpi + self.include_gdp
+    self.include_interest_rate = include_interest_rate
+    self.num_of_feature = self.window_size + self.include_cpi + self.include_gdp + self.include_interest_rate
 
     self.num_of_neuron = num_of_neuron
     self.num_of_iteration = num_of_iteration
@@ -113,11 +117,15 @@ class ModelTrainer():
     main_evaluation_metric = -99999
     target = -99998
     while main_evaluation_metric < target:
-      self.num_of_feature = self.window_size + self.include_cpi + self.include_gdp
+      self.num_of_feature = self.window_size + self.include_cpi + self.include_gdp + self.include_interest_rate
       self.introduce()
       print("\n\n")
 
-      x_test, x_train, y_test, y_train = self._preprocess_data(df, malaysia_df, verbose=not only_show_evaluation)
+      if self.compute_difference:
+        x_test, x_train, y_test, y_train, last = self._preprocess_data(df, malaysia_df, verbose=not only_show_evaluation)
+      else:
+        x_test, x_train, y_test, y_train = self._preprocess_data(df, malaysia_df, verbose=not only_show_evaluation)
+
       if not only_show_evaluation:
         print("\n\n")
 
@@ -125,7 +133,10 @@ class ModelTrainer():
       if not only_show_evaluation:
         print("\n\n")
 
-      main_evaluation_metric = self._evaluate_model(x_test, y_test)
+      if self.compute_difference:
+        main_evaluation_metric = self._evaluate_model(x_test, y_test, last=last)
+      else:
+        main_evaluation_metric = self._evaluate_model(x_test, y_test)
       print("\n\n")
 
   def save(self):
@@ -190,9 +201,9 @@ class ModelTrainer():
     def _split_train_test(data, test_size):
       total_size = len(data)
       stop_index = int(test_size*total_size)
-      return data[:stop_index], data[stop_index:]
+      return data[-stop_index:], data[:-stop_index]
 
-    def _split_x_y(data, look_back, include_cpi=False, include_gdp=False):
+    def _split_x_y(data, look_back, include_cpi=False, include_gdp=False, include_interest_rate=False):
       datax, datay = [],[]
       for i in range(len(data)-look_back):
         datax.append(data[i:(i + look_back), 0])
@@ -200,7 +211,9 @@ class ModelTrainer():
           datax[i] = np.append(datax[i], data[i + look_back, 1])
         if include_gdp:
           datax[i] = np.append(datax[i], data[i + look_back, 2])
-        datay.append(data[i + look_back, 0])
+        if include_interest_rate:
+          datax[i] = np.append(datax[i], data[i + look_back, 3])
+        datay.append(data[i + look_back, 4])
       return np.array(datax), np.array(datay)
     
     if verbose:
@@ -216,9 +229,17 @@ class ModelTrainer():
     _df = df[['from_myr']]
     _df['gdp'] = malaysia_df['gdp'] - df['gdp']
     _df['cpi'] = malaysia_df['cpi'] - df['cpi']
-    # _df['from_myr'] = _df['from_myr'].diff()
-    # _df['from_myr'][0] = 0
+    _df['interest_rate'] = malaysia_df['interest_rate'] - df['interest_rate']
+    _df['target'] = _df['from_myr']
 
+    if self.compute_difference:
+      _idx = len(_df) - int(self.test_size * len(_df)) - 1
+      last = _df.iloc[_idx]['from_myr']
+      _df['from_myr'] = _df['from_myr'].diff().fillna(0)
+      if self.predict_change:
+        _df['target'] = _df['from_myr']
+      # rolling = _df['from_myr'].rolling(window=3)
+      # _df['from_myr'] = rolling.mean().fillna(0)
 
     if verbose:
       print("Done Calculating.")
@@ -229,22 +250,23 @@ class ModelTrainer():
     if verbose:
       print("Performing Min Max Scaling...")
 
-    self.scaler = MinMaxScaler()
-    _df[['from_myr']] = self.scaler.fit_transform(_df[['from_myr']])
-    _temp_scaler = MinMaxScaler()
-    _df[['cpi']] = _temp_scaler.fit_transform(_df[['cpi']])
-    _temp_scaler = MinMaxScaler()
-    _df[['gdp']] = _temp_scaler.fit_transform(_df[['gdp']])
-
+    _df[['from_myr']] = MinMaxScaler().fit_transform(_df[['from_myr']])
+    _df[['cpi']] = MinMaxScaler().fit_transform(_df[['cpi']])
+    _df[['gdp']] = MinMaxScaler().fit_transform(_df[['gdp']])
+    _df[['interest_rate']] = MinMaxScaler().fit_transform(_df[['interest_rate']])
+    
     if verbose:
       print("Done Scaling.")
 
     ###
     ### Convert to Numpy Array
     ###
-    _df = np.array(_df[['from_myr', 'cpi', 'gdp']]).reshape(-1, 3)
-
-
+    if self.algorithm != "XGBOOST":
+      _df = np.array(_df[['from_myr', 'cpi', 'gdp', 'interest_rate', 'target']]).reshape(-1, 5)
+    else:
+      for i in range(1, self.window_size + 1):
+          _df['lag'+str(i)] = _df['from_myr'].shift(i).fillna(0)
+    
     ### 
     ### Split Dataset
     ###
@@ -252,8 +274,23 @@ class ModelTrainer():
       print("Splitting Dataset...")
 
     _test, _train = _split_train_test(_df, self.test_size)
-    _x_test, _y_test = _split_x_y(_test, self.window_size, self.include_cpi, self.include_gdp)
-    _x_train, _y_train = _split_x_y(_train, self.window_size, self.include_cpi, self.include_gdp)
+
+    if self.algorithm == "XGBOOST":
+      if not self.include_cpi:
+        _test.drop('cpi', inplace=True, axis=1)
+        _train.drop('cpi', inplace=True, axis=1)
+
+      if not self.include_gdp:
+        _test.drop('gdp', inplace=True, axis=1)
+        _train.drop('gdp', inplace=True, axis=1)
+
+      _x_test = _test.drop('from_myr', axis=1).drop('target', axis=1)
+      _y_test = _test.target
+      _x_train = _train.drop('from_myr', axis=1).drop('target', axis=1)
+      _y_train = _train.target
+    else:
+      _x_test, _y_test = _split_x_y(_test, self.window_size, self.include_cpi, self.include_gdp, self.include_interest_rate)
+      _x_train, _y_train = _split_x_y(_train, self.window_size, self.include_cpi, self.include_gdp, self.include_interest_rate)
 
     if verbose:
       print("Done Splitting.")
@@ -283,7 +320,11 @@ class ModelTrainer():
       print("Y test set shape: " + str(_y_test.shape))
       print("X train set shape: " + str(_x_train.shape))
       print("Y train set shape: " + str(_y_train.shape))
-    return _x_test, _x_train, _y_test, _y_train
+    
+    if self.compute_difference:
+      return _x_test, _x_train, _y_test, _y_train, last
+    else:
+      return _x_test, _x_train, _y_test, _y_train
 
   def _train_model(self, x_train, y_train, verbose=True):
     if verbose:
@@ -296,7 +337,7 @@ class ModelTrainer():
       ###
       if verbose:
         print("Making Polynomial Features...")
-      poly = PolynomialFeatures(degree=self.num_of_feature, interaction_only=True)
+      poly = PolynomialFeatures(degree=2, interaction_only=True)
       x_poly = poly.fit_transform(x_train)
       if verbose:
         print("Done Making.")
@@ -344,7 +385,7 @@ class ModelTrainer():
         print("Done Fitting.")
     
     elif self.algorithm == "LASSO":
-      model = Lasso(alpha=0.001)
+      model = Lasso(alpha=self.alpha)
 
       ###
       ### Fit Model to Dataset
@@ -394,18 +435,22 @@ class ModelTrainer():
       if verbose:
         print("Fitting to Dataset...")
 
-      model.fit(x_train, y_train, validation_split=0.2, epochs = self.num_of_iteration, batch_size=64)
+      model.fit(x_train, y_train, validation_split=0.2, epochs = self.num_of_iteration, batch_size=1)
 
       if verbose:
         print("Done Fitting.")
+    elif self.algorithm == "XGBOOST":
+      data = xgb.DMatrix(x_train,label=y_train) 
+      #train the data
+      model = xgb.train({}, data)
 
     self.model = model
     
-  def _evaluate_model(self, x_test, y_test, verbose=True):
+  def _evaluate_model(self, x_test, y_test, verbose=True, last=None):
     def _plot_actual_predict_graph(y_test, y_pred, currency_code, window_size):
       plt.figure(figsize=(15, 10))
       plt.subplot(2, 1, 1)
-      plt.title(f'Foreign Exchange Rate of MYR-{currency_code} with Window Size of {window_size}')
+      plt.title(f'Foreign Exchange Rate of MYR-{currency_code} with Window Size of {window_size} ({self.algorithm})')
       plt.plot(y_test, label = 'Actual', color = 'blue')
       plt.plot(y_pred, label = 'Predicted', color = 'orange')
       plt.legend()
@@ -421,7 +466,10 @@ class ModelTrainer():
       if self.include_gdp:
         _index.append("GDP Growth Rate")
 
-      if self.algorithm == "LSTM":
+      if self.include_interest_rate:
+        _index.append("Interest Rate")
+
+      if self.algorithm == "LSTM" or self.algorithm == "XGBOOST":
         return
       if self.algorithm == "POLYNOMIAL":
         feat_importances = pd.Series(self.model.coef_)
@@ -443,18 +491,27 @@ class ModelTrainer():
     if verbose:
       print("Predicting on Test Set...")
 
+    _x_test = x_test
     if self.algorithm == "POLYNOMIAL":
-      poly = PolynomialFeatures(degree=self.num_of_feature, interaction_only=True)
+      poly = PolynomialFeatures(degree=2, interaction_only=True)
       _x_test = poly.fit_transform(x_test)
-      _y_pred = self.model.predict(_x_test)
-    elif (self.algorithm == "LSTM" or self.algorithm == "LINEAR" or 
-          self.algorithm == "RIDGE" or self.algorithm == "LASSO"):
-      _y_pred = self.model.predict(x_test)
+    elif self.algorithm == "XGBOOST":
+      _x_test = xgb.DMatrix(x_test)
 
+    _y_pred = self.model.predict(_x_test)
     _y_pred = np.array(_y_pred).reshape(-1, 1)
-    _y_pred = self.scaler.inverse_transform(_y_pred)
     _y_test = np.array(y_test).reshape(-1, 1)
-    _y_test = self.scaler.inverse_transform(_y_test)
+
+    if last is not None and self.predict_change:
+      _prev_pred = last
+      _prev_actual = last
+      for i in range(_y_pred.shape[0]):
+        _y_pred[i][0] = _y_pred[i][0] + _prev_pred
+        _prev_pred = _y_pred[i][0]
+        _y_test[i][0] = _y_test[i][0] + _prev_actual
+        _prev_actual = _y_test[i][0]
+      _y_pred = np.append(np.array([[last]]), _y_pred )
+      _y_test = np.append(np.array([[last]]), _y_test )
 
     if verbose:
       print("Done Predicting.")
