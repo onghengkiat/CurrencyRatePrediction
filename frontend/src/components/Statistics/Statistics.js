@@ -6,7 +6,6 @@ import './Statistics.css';
 import SidePanel from './StatisticsComponents/SidePanel';
 import ModelStatistics from './StatisticsComponents/ModelStatistics';
 import DatasetStatistics from './StatisticsComponents/DatasetStatistics';
-import Button from 'react-bootstrap/Button';
 import { BACKEND_SERVER_ERROR } from '../../constants/error';
 
 

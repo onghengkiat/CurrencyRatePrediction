@@ -1,0 +1,64 @@
+.side-panel {
+    position: fixed;
+    width: 330px;
+    height: 100%;
+    left: -300px;
+    transition: 0.5s;
+}
+
+.side-panel-toggle {
+    position: fixed;
+    left: -10px;
+    background-color: rgb(202, 202, 202);
+    border-color:rgb(202, 202, 202);
+    color: white;
+    padding: 0;
+    top: 50%;
+    transition: 0.5s;
+    border-radius: 5px;
+}
+
+.side-panel-toggle-icon {
+    font-size: 45px;
+}
+
+.side-panel-form {
+    position: relative;
+    left: 0px;
+    padding: 20px;
+    width: 300px;
+    height: 100%;
+    background-color: rgb(202, 202, 202);
+}
+
+.side-panel.open {
+    left: 0px;
+}
+
+.side-panel-toggle.open {
+    left: 290px;
+}
+
+.side-panel-title-container {
+    background: grey;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    text-align: center;
+    height: 50px;
+    padding: 0px 4px;
+}
+
+.side-panel-title {
+    color: white;
+    font-size: 30px;
+}
+
+.right-content {
+    margin-left: 30px;
+    padding: 20px;
+    transition: 0.5s;
+}
+
+.right-content.open {
+    margin-left: 330px;
+}

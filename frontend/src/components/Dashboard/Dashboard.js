@@ -57,6 +57,7 @@ async function fetchCurrencyList() {
                 data: [2.0, 2.2, 3.3, 4.5, 6.3, 10.2, 20.3, 23.4, 23.0, 16.5, 12.0, 6.2]
             }
       ]});
+      const [sidePanelIsOpened, setSidePanelIsOpened] = useState(true);
       
     
       // acts as component did mount
@@ -78,14 +79,14 @@ async function fetchCurrencyList() {
         fetchData();
       }, [currencyCode]);
       
-      return (
-          <Container fluid>
-            <div className="left-content">
-                <SidePanel currencyList={ currencyList } setCurrencyCode={ setCurrencyCode }/>
-            </div>
-            <div className="right-content">
-                <TimeTrend data={ timeTrendData }/>
-            </div>
-          </Container>
-      );
+    const rightContentClassname = sidePanelIsOpened ? "right-content open" : "right-content";
+
+    return (
+        <Container fluid>
+          <SidePanel isOpened={ sidePanelIsOpened } setIsOpened={ setSidePanelIsOpened } currencyList={ currencyList } setCurrencyCode={ setCurrencyCode }/>
+          <div className={rightContentClassname}>
+              <TimeTrend data={ timeTrendData }/>
+          </div>
+        </Container>
+    );
   }
