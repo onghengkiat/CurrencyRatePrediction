@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Route, Switch } from 'react-router-dom';
+import './App.css';
 
 import Navbar from '../Navbar/Navbar';
 import Home from '../Home/Home';
@@ -29,25 +30,23 @@ function App() {
         <ErrorToast error={ error } setError={ setError }/>
         <SuccessToast success={ success } setSuccess={ setSuccess }/>
         <Spinner loading={ loading } />
+        <Navbar/>
+
         <Switch>
 
           <Route path="/dataset">
-            <Navbar/>      
             <Dataset setError={ setError } setLoading={ setLoading }/>
           </Route>
 
           <Route path="/statistic">
-            <Navbar/>      
             <Statistics setError={ setError } setLoading={ setLoading }/>
           </Route>
 
           <Route path="/dashboard">
-            <Navbar/>      
             <Dashboard setError={ setError } setLoading={ setLoading }/>
           </Route>
 
           <Route path="/">
-            <Navbar/>      
             <Home setError={ setError }/>
           </Route>
           

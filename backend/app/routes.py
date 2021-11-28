@@ -7,6 +7,7 @@ from datetime import timedelta
 import os
 import tempfile
 from flask_cors import cross_origin
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -352,6 +353,43 @@ def get_currency_list():
 def get_algorithm_list():
     try: 
         return jsonify({"message": "Successful", "data": ModelTrainer.ALGORITHMS_AVAILABLE}), 200
+    except Exception as e:
+        print(e)
+        return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
+
+@app.route("/dashboard/timetrend")
+@cross_origin(origin='*')
+@missing_param_handler
+def get_dashboard_timetrend():
+    currency_code = request.args.get('currency_code', None)
+    try: 
+        _df = df[df['currency_code'] == currency_code]
+        _df = _df.groupby([pd.DatetimeIndex(_df.date).to_period('M')]).nth(0).reset_index(drop=True)
+        _df['date'] = _df['date'].dt.strftime("%Y/%m/%d")
+        data = [
+            {
+                "name": "GDP Growth Rate",
+                "type": "line",
+                "showSymbol": False,
+                "data": _df[["date", "gdp"]].values.tolist()
+            },
+            {
+                "name": "CPI",
+                "type": "line",
+                "showSymbol": False,
+                "yAxisIndex": 1,
+                "data": _df[["date", "cpi"]].values.tolist()
+            },
+            {
+                "name": "Interest Rate",
+                "type": "line",
+                "showSymbol": False,
+                "yAxisIndex": 2,
+                "data": _df[["date", "interest_rate"]].values.tolist()
+            }
+        ]
+
+        return jsonify({"message": "Successful", "data": data}), 200
     except Exception as e:
         print(e)
         return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400

@@ -1,8 +1,12 @@
 import React, {useState, useEffect} from 'react';
 import Container from 'react-bootstrap/Container';
+import Card from 'react-bootstrap/Card';
+import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
 import { URL_PREFIX } from '../../constants/API';
 
 import './Dashboard.css';
+import ErrorComponent from './DashboardComponents/ErrorComponent';
 import SidePanel from './DashboardComponents/SidePanel';
 import TimeTrend from './DashboardComponents/TimeTrend';
 import { BACKEND_SERVER_ERROR } from '../../constants/error';
@@ -32,61 +36,108 @@ async function fetchCurrencyList() {
     })
 }
 
-  export default function Dashboard({ setError, setLoading }){
-  
-      const [currencyCode, setCurrencyCode] = useState("USD");
-      const [currencyList, setCurrencyList] = useState(["USD"]);
-      const [timeTrendData, setTimeTrendData] = useState({
-          "xaxis": ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-          "yaxis": [
-            {
-                name: 'GDP Growth Rate',
-                type: 'line',
-                data: [2.0, 4.9, 7.0, 23.2, 25.6, 76.7, 135.6, 162.2, 32.6, 20.0, 6.4, 3.3]
-            },
-            {
-                name: 'CPI',
-                type: 'line',
-                yAxisIndex: 1,
-                data: [2.6, 5.9, 9.0, 26.4, 28.7, 70.7, 175.6, 182.2, 48.7, 18.8, 6.0, 2.3]
-            },
-            {
-                name: 'Interest Rate',
-                type: 'line',
-                yAxisIndex: 2,
-                data: [2.0, 2.2, 3.3, 4.5, 6.3, 10.2, 20.3, 23.4, 23.0, 16.5, 12.0, 6.2]
-            }
-      ]});
-      const [sidePanelIsOpened, setSidePanelIsOpened] = useState(true);
-      
-    
-      // acts as component did mount
-      // fetch the data
-      useEffect( () => {
-        async function fetchData() {
-          setLoading(true);
-  
-          const response6 = await fetchCurrencyList();
-          if (response6.isError){
-            setError(response6);
-          } else {
-            const data = response6;
-            setCurrencyList(data);
-          }
-  
-          setLoading(false);
-        }
-        fetchData();
-      }, [currencyCode]);
-      
-    const rightContentClassname = sidePanelIsOpened ? "right-content open" : "right-content";
+async function fetchDashboardTimetrend(currency_code) {
+  return fetch(`${URL_PREFIX}dashboard/timetrend?currency_code=${currency_code}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    if (response.ok) {
+      return response.json();
+    }
+    throw response;
+  })
+  .then(data => data.data)
+  .catch(response => { 
+    // case when backend server is working, and sent frontend the error message
+    if (response.isError) {
+      return response.json();
+    } else {
+      // case when backend server is not working fine and didn't send any useful info to frontend
+      return BACKEND_SERVER_ERROR;
+    }
+  })
+}
 
-    return (
-        <Container fluid>
-          <SidePanel isOpened={ sidePanelIsOpened } setIsOpened={ setSidePanelIsOpened } currencyList={ currencyList } setCurrencyCode={ setCurrencyCode }/>
-          <div className={rightContentClassname}>
-              <TimeTrend data={ timeTrendData }/>
-          </div>
-        </Container>
-    );
-  }
+export default function Dashboard({ setError, setLoading }){
+
+    const [currencyCode, setCurrencyCode] = useState("USD");
+    const [currencyList, setCurrencyList] = useState(["USD"]);
+    const [timeTrendData, setTimeTrendData] = useState(null);
+    const [sidePanelIsOpened, setSidePanelIsOpened] = useState(true);
+    
+  
+    // acts as component did mount
+    // fetch the data
+    useEffect( () => {
+      async function fetchData() {
+        setLoading(true);
+
+        const response = await fetchCurrencyList();
+        if (response.isError){
+          setError(response);
+        } else {
+          const data = response;
+          setCurrencyList(data);
+        }
+
+        const response2 = await fetchDashboardTimetrend(currencyCode);
+        if (response2.isError){
+          setError(response2);
+        } else {
+          const data = response2;
+          setTimeTrendData(data);
+        }
+        setLoading(false);
+      }
+      fetchData();
+    }, [currencyCode]);
+    
+  const rightContentClassname = sidePanelIsOpened ? "right-content open" : "right-content";
+
+  return (
+      <Container id="dashboard-container" fluid>
+        <SidePanel isOpened={ sidePanelIsOpened } setIsOpened={ setSidePanelIsOpened } currencyList={ currencyList } setCurrencyCode={ setCurrencyCode }/>
+        <div className={rightContentClassname}>
+            <Row lg={2} xs={1} className="dashboard-row">
+              <Col lg={4} className="dashboard-chart-outer-container">
+                <Card className="dashboard-chart-inner-container">
+                  <Card.Body>
+                    <div className="dashboard-chart-title">Currency Detail</div>
+                  </Card.Body>
+                </Card>
+              </Col>
+
+              <Col lg={8} className="dashboard-chart-outer-container">
+                <Card className="dashboard-chart-inner-container">
+                  <Card.Body>
+                    <div className="dashboard-chart-title">Time Trend</div>
+                    { (!timeTrendData || timeTrendData.length === 0) ? <ErrorComponent /> : <TimeTrend data={ timeTrendData }/>}
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
+
+            <Row lg={2} xs={1}>
+              <Col lg={8} className="dashboard-chart-outer-container">
+                <Card className="dashboard-chart-inner-container">
+                  <Card.Body>
+                    <div className="dashboard-chart-title">Rates</div>
+                  </Card.Body>
+                </Card>
+              </Col>
+
+              <Col lg={4} className="dashboard-chart-outer-container">
+                <Card className="dashboard-chart-inner-container">
+                  <Card.Body>
+                    <div className="dashboard-chart-title">Rate Conversion</div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
+        </div>
+      </Container>
+  );
+}

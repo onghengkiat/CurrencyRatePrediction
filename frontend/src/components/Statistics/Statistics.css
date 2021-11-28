@@ -1,3 +1,7 @@
+#statistic-container {
+    padding: 0px !important;
+}
+
 .side-panel {
     position: fixed;
     width: 330px;
@@ -16,23 +20,27 @@
     justify-content: center;
     align-items: center;
 
-    background-color: rgb(202, 202, 202);
-    border-color:rgb(202, 202, 202);
+    background-color: #343a40;
     color: white;
     transition: 0.5s;
 }
 
 .side-panel-toggle-icon {
-    font-size: 45px;
+    font-size: 40px;
 }
 
 .side-panel-form {
     position: relative;
     left: 0px;
-    padding: 20px;
+    padding: 0px 20px;
     width: 300px;
     height: 100%;
-    background-color: rgb(202, 202, 202);
+    background-color: #343a40;
+    color: white;
+
+    border-right-color: grey;
+    border-right-width: 1px;
+    border-right-style: solid; 
 }
 
 .side-panel.open {
@@ -45,11 +53,9 @@
 
 .side-panel-title-container {
     background: grey;
-    border-radius: 10px;
-    margin-bottom: 10px;
+    margin: 0px -20px 10px -20px;
     text-align: center;
     height: 50px;
-    padding: 0px 4px;
 }
 
 .side-panel-title {
@@ -57,14 +63,19 @@
     font-size: 30px;
 }
 
+.side-panel-button {
+    width: 150px;
+    border-radius: 10px !important;
+}
+
 .right-content {
-    margin-left: 30px;
+    margin-left: 40px;
     padding: 20px;
     transition: 0.5s;
 }
 
 .right-content.open {
-    margin-left: 330px;
+    margin-left: 340px;
 }
 
 .chart-container {
@@ -73,9 +84,8 @@
 
 .statistic-title {
     background-color: #ECECEC;
-    padding: 25px;
-    margin-bottom: 10px;
-    margin-top: 10px;
+    padding: 25px ;
+    margin: 10px !important;
 }
 
 .statistic-title-icon {

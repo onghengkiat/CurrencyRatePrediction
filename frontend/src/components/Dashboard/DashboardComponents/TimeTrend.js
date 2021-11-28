@@ -2,42 +2,41 @@ import React from 'react';
 import ReactECharts from "echarts-for-react";
 
 export default function TimeTrend({ data }){
-    const colors = ['#5470C6', '#91CC75', '#EE6666'];
+    const colors = ['blue', 'green', 'red'];
+    const legends = data.map((value, _) => { return value.name;})
+    
     const option = {
       color: colors,
       tooltip: {
         trigger: 'axis',
-        axisPointer: {
-          type: 'cross'
-        }
-      },
-      grid: {
-        right: '20%'
-      },
-      toolbox: {
-        feature: {
-          dataView: { show: true, readOnly: false },
-          restore: { show: true },
-          saveAsImage: { show: true }
-        }
       },
       legend: {
-        data: ['Evaporation', 'Precipitation', 'Temperature']
+        data: legends
+      },
+      grid: {
+        containLabel: true,
+        bottom: 0,
+        left: 0,
       },
       xAxis: [
         {
-          type: 'category',
+          type: 'time',
           axisTick: {
             alignWithLabel: true
           },
-          // prettier-ignore
-          data: data.xaxis
+          axisLine: {
+            show: false,
+          },
+          axisTick: {
+            show: false,
+          },
         }
       ],
       yAxis: [
         {
           type: 'value',
           name: 'GDP Growth Rate',
+          scale: true,
           position: 'right',
           axisLine: {
             show: true,
@@ -45,13 +44,17 @@ export default function TimeTrend({ data }){
               color: colors[0]
             }
           },
+          splitLine: {
+            show: false,
+          },
           axisLabel: {
-            formatter: '{value} ml'
+            formatter: '{value} %'
           }
         },
         {
           type: 'value',
           name: 'CPI',
+          scale: true,
           position: 'right',
           offset: 80,
           axisLine: {
@@ -60,13 +63,17 @@ export default function TimeTrend({ data }){
               color: colors[1]
             }
           },
+          splitLine: {
+            show: false,
+          },
           axisLabel: {
-            formatter: '{value} ml'
+            formatter: '{value}'
           }
         },
         {
           type: 'value',
           name: 'Interest Rate',
+          scale: true,
           position: 'left',
           axisLine: {
             show: true,
@@ -74,12 +81,15 @@ export default function TimeTrend({ data }){
               color: colors[2]
             }
           },
+          splitLine: {
+            show: false,
+          },
           axisLabel: {
-            formatter: '{value} °C'
+            formatter: '{value} %'
           }
         }
       ],
-      series: data.yaxis
+      series: data
     };
 
     return (

@@ -1,3 +1,33 @@
+#dashboard-container {
+    background-color: rgb(235, 235, 235);
+    height: 100%;
+}
+
+.dashboard-chart-outer-container {
+    margin-bottom: 20px;
+}
+
+.dashboard-chart-inner-container {
+    border: none !important;
+    height: 100%;
+}
+
+.dashboard-chart-title {
+    font-family: Open Sans;
+}
+
+.dashboard-error-component {
+    color: rgb(225, 0, 0);
+    background-color: rgb(255, 200, 200);
+    border: solid;
+    border-color: rgb(255, 90, 90);
+    border-width: 1px;
+    border-radius: 5px;
+    margin: 5px 0;
+    padding: 10px;
+    text-align: center;
+}
+
 /* 
 Refer to Statistics.css for the sidepanel css 
 .side-panel {

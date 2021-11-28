@@ -238,7 +238,7 @@ export default function Statistics({ setError, setLoading }){
     const rightContentClassname = sidePanelIsOpened ? "right-content open" : "right-content";
 
     return (
-        <Container fluid>
+        <Container id="statistic-container" fluid>
             
             <SidePanel isOpened={ sidePanelIsOpened } setIsOpened={ setSidePanelIsOpened } currencyList={ currencyList } setCurrencyCode={ setCurrencyCode } algorithmList={ algorithmList } setAlgorithm={ setAlgorithm } setCPI={ setCPI } setGDP={ setGDP }/>
             
