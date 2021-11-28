@@ -1,3 +1,5 @@
+/* 
+Refer to Statistics.css for the sidepanel css 
 .side-panel {
     position: fixed;
     width: 330px;
@@ -13,7 +15,7 @@
     border-color:rgb(202, 202, 202);
     color: white;
     padding: 0;
-    top: 50%;
+    top: 0;
     transition: 0.5s;
     border-radius: 5px;
 }
@@ -61,4 +63,4 @@
 
 .right-content.open {
     margin-left: 330px;
-}
+} */
