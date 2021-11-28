@@ -6,6 +6,7 @@ import './Statistics.css';
 import SidePanel from './StatisticsComponents/SidePanel';
 import ModelStatistics from './StatisticsComponents/ModelStatistics';
 import DatasetStatistics from './StatisticsComponents/DatasetStatistics';
+import Button from 'react-bootstrap/Button';
 import { BACKEND_SERVER_ERROR } from '../../constants/error';
 
 
@@ -173,6 +174,7 @@ export default function Statistics({ setError, setLoading }){
     const [algorithmList, setAlgorithmList] = useState(["LSTM"]);
     const [statistics, setStatistics] = useState({});
     const [modelPerformance, setModelPerformance] = useState({});
+    const [sidePanelIsOpened, setSidePanelIsOpened] = useState(true);
   
     // acts as component did mount
     // fetch the data
@@ -233,12 +235,15 @@ export default function Statistics({ setError, setLoading }){
       fetchData();
     }, [currencyCode, algorithm, includeCPI, includeGDP]);
     
+    
+    const rightContentClassname = sidePanelIsOpened ? "right-content open" : "right-content";
+
     return (
         <Container fluid>
-            <div className="left-content">
-                <SidePanel currencyList={ currencyList } setCurrencyCode={ setCurrencyCode } algorithmList={ algorithmList } setAlgorithm={ setAlgorithm } setCPI={ setCPI } setGDP={ setGDP }/>
-            </div>
-            <div className="right-content">
+            
+            <SidePanel isOpened={ sidePanelIsOpened } setIsOpened={ setSidePanelIsOpened } currencyList={ currencyList } setCurrencyCode={ setCurrencyCode } algorithmList={ algorithmList } setAlgorithm={ setAlgorithm } setCPI={ setCPI } setGDP={ setGDP }/>
+            
+            <div className={rightContentClassname}>
                 <DatasetStatistics currencyCode={ currencyCode } statistics={ statistics } pic2={ pic2 }/>
                 <ModelStatistics pic={ pic } modelPerformance={ modelPerformance } algorithm={ algorithm }/>
             </div>

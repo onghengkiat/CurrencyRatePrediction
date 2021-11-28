@@ -25,6 +25,7 @@ export default function NavBar(){
                     <Nav.Link className="navigation-bar" href="/">Home</Nav.Link>
                     <Nav.Link className="navigation-bar" href="/dataset">Dataset</Nav.Link>
                     <Nav.Link className="navigation-bar" href="/statistic">Statistics</Nav.Link>
+                    <Nav.Link className="navigation-bar" href="/dashboard">Dashboard</Nav.Link>
                 </Nav>
 
             </Navbar.Collapse>

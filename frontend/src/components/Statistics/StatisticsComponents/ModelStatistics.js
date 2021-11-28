@@ -13,10 +13,10 @@ export default function ModelStatistics({ pic, modelPerformance, algorithm }){
     return (
         <div>
             <Row>
-                <Container id="dashboard-title" fluid>
+                <Container className="statistic-title" fluid>
                     <Row className="justify-content-between">
                         <Col>
-                            <SiProbot id="dashboard-title-icon"/>
+                            <SiProbot className="statistic-title-icon"/>
                             <h5><b>Predictive Model Performance</b></h5>
                             <h5 className="text-muted"><b>Algorithm: {algorithm}</b></h5>
                         </Col>
@@ -56,7 +56,9 @@ export default function ModelStatistics({ pic, modelPerformance, algorithm }){
                     />
                 </Col>
             </Row>
-            <Image alt='actual_vs_predicted' src={ pic } className="responsive"/>
+            <Row className="justify-content-center">
+                <Image alt='actual_vs_predicted' src={ pic } className="responsive"/>
+            </Row>
         </div>
     );
 }

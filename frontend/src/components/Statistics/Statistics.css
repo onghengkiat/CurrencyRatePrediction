@@ -1,22 +1,45 @@
-.left-content {
+.side-panel {
     position: fixed;
-    width: 25%;
+    width: 330px;
+    height: 100%;
+    left: -300px;
+    transition: 0.5s;
+}
+
+.side-panel-toggle {
+    position: fixed;
+    left: -10px;
+    background-color: rgb(202, 202, 202);
+    border-color:rgb(202, 202, 202);
+    color: white;
+    padding: 0;
+    top: 50%;
+    transition: 0.5s;
+    border-radius: 5px;
+}
+
+.side-panel-toggle-icon {
+    font-size: 45px;
+}
+
+.side-panel-form {
+    position: relative;
+    left: 0px;
     padding: 20px;
-    left: 0;
+    width: 300px;
     height: 100%;
     background-color: rgb(202, 202, 202);
 }
 
-.right-content {
-    margin-left: 25%;
-    padding: 20px;
+.side-panel.open {
+    left: 0px;
 }
 
-.chart-container {
-    padding: 25px !important;
+.side-panel-toggle.open {
+    left: 290px;
 }
 
-#side-panel-title-container {
+.side-panel-title-container {
     background: grey;
     border-radius: 10px;
     margin-bottom: 10px;
@@ -25,55 +48,37 @@
     padding: 0px 4px;
 }
 
-#side-panel-title {
+.side-panel-title {
     color: white;
     font-size: 30px;
 }
 
-#dashboard-title {
+.right-content {
+    margin-left: 30px;
+    padding: 20px;
+    transition: 0.5s;
+}
+
+.right-content.open {
+    margin-left: 330px;
+}
+
+.chart-container {
+    padding: 25px !important;
+}
+
+.statistic-title {
     background-color: #ECECEC;
     padding: 25px;
     margin-bottom: 10px;
     margin-top: 10px;
 }
 
-#dashboard-title-icon {
+.statistic-title-icon {
     font-size: 55px;
     padding: 5px;
     margin-right: 20px;
     border-radius: 50%;
     background-color:white;
     float: left;
-}
-
-@media (max-width: 992px) {
-
-    #side-panel-title {
-        color: white;
-        font-size: 23px;
-    }
-}
-
-@media (max-width: 767.9px) {
-
-    #side-panel-title {
-        color: white;
-        font-size: 18px;
-    }
-}
-
-@media (max-width: 575.9px) {
-    #side-panel-title {
-        color: white;
-        font-size: 14px;
-    }
-
-    #side-panel-title-container {
-        padding: 0px;
-    }
-    
-    #side-panel-button {
-        padding: 0px;
-        font-size: 12px;
-    }
 }

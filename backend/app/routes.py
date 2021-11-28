@@ -234,7 +234,7 @@ def get_actual_predicted_graph():
         plt.legend()
 
         # Specify formatter for the dates on X-axis
-        locator = mdates.MonthLocator(interval=3)
+        locator = mdates.MonthLocator(interval=1)
         fmt = mdates.DateFormatter('%b\n%Y')
         X = plt.gca().xaxis
         X.set_major_locator(locator)
@@ -266,7 +266,9 @@ def get_actual_predicted_graph():
 
         # Skip the first n, window size in which it can't make predictions on it
         _df = df[df['currency_code'] == currency_code].reset_index(drop=True)
+        _df = _df[-90:]
         date = _df["date"].tolist()[WINDOW_SIZE:]
+        date = date[-90:]
 
         # Data Preprocessing
         x, y, prev_data = _preprocess_data(_df, scaler, algorithm, include_cpi=include_cpi, include_gdp=include_gdp)

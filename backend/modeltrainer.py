@@ -1,9 +1,7 @@
 # Importing Libraries
-# Importing Libraries
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import keras.backend as K
 from sklearn.preprocessing import MinMaxScaler, PolynomialFeatures
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 import math
@@ -13,20 +11,24 @@ from sklearn.linear_model import LinearRegression, Ridge, Lasso
 import os
 import joblib
 
-
 # Remove the false warning
 pd.options.mode.chained_assignment = None
 
 class ModelTrainer():
 
-  ALGORITHMS_AVAILABLE = ["LSTM", "POLYNOMIAL", "LINEAR", "LASSO", "RIDGE", "XGBOOST"]
+  ALGORITHMS_AVAILABLE = ["LSTM", "POLYNOMIAL", "LINEAR", "LASSO", "RIDGE"]
 
   def __init__(self, currency_code, model_filename, model_save_path, 
                model_with_cpi, model_with_gdp, model_with_gdp_and_cpi, model_only_rate,
                algorithm="LSTM",  window_size=3, include_cpi=False, include_gdp=False, include_interest_rate=False, 
-               num_of_neuron=100, num_of_iteration=10, dropout=0, alpha=0.001, test_size=0.2,
-               compute_difference=True, predict_change=False):
+               num_of_neuron=100, num_of_iteration=10, dropout=0, alpha=0, test_n_months=12,
+               compute_difference=True, predict_change=False, same_scale=False):
+    self.COLUMNS_TO_PROPAGATE = ['gdp', 'cpi', 'interest_rate']
+    self.COLUMNS_TO_CALCULATE_DIFFERENCE = ['gdp', 'cpi', 'interest_rate']
+    self.same_scale = same_scale
+
     self.currency_code = currency_code
+    self.scaler = None
     self.model = None
     self.compute_difference = compute_difference
     self.predict_change = predict_change
@@ -53,7 +55,7 @@ class ModelTrainer():
     self.graph_filename = ""
     self.model_save_path = model_save_path
 
-    self.test_size = test_size
+    self.test_n_months = test_n_months
 
   # Setter for the Parameters
   def set_algorithm(self, algorithm):
@@ -73,11 +75,15 @@ class ModelTrainer():
 
   def set_include_cpi(self, include_cpi):
     self.include_cpi = include_cpi
-    self.num_of_feature = self.window_size + self.include_cpi + self.include_gdp
+    self.num_of_feature = self.window_size + self.include_cpi + self.include_gdp + self.include_interest_rate
 
   def set_include_gdp(self, include_gdp):
     self.include_gdp = include_gdp
-    self.num_of_feature = self.window_size + self.include_cpi + self.include_gdp
+    self.num_of_feature = self.window_size + self.include_cpi + self.include_gdp + self.include_interest_rate
+
+  def set_include_interest_rate(self, include_interest_rate):
+    self.include_interest_rate = include_interest_rate
+    self.num_of_feature = self.window_size + self.include_cpi + self.include_gdp + self.include_interest_rate
 
   ##################
   # PUBLIC METHODS #
@@ -143,10 +149,9 @@ class ModelTrainer():
     """
     Description
     -----------
-    Save 3 files in the folder for the respective currency code and algorithm
+    Save 2 files in the folder for the respective currency code and algorithm
     1) Model file
-    2) Scalar file
-    3) Prediction vs Actual Graph (The filename consists of the model performance 
+    2) Prediction vs Actual Graph (The filename consists of the model performance 
     such as R square and MSE)
     """
     if self.model is None:
@@ -198,10 +203,35 @@ class ModelTrainer():
   # PRIVATE METHODS #
   ###################
   def _preprocess_data(self, df, malaysia_df, verbose=True):
-    def _split_train_test(data, test_size):
-      total_size = len(data)
-      stop_index = int(test_size*total_size)
-      return data[-stop_index:], data[:-stop_index]
+    def propagate_data_to_daily(_df, columns_to_be_interpolated):
+      prev = {}
+      for idx, row in _df.iterrows():
+        for col in columns_to_be_interpolated:
+          if idx == 0:
+            prev[col] = _df.at[0, col]
+          elif _df.at[idx, col] == prev[col]:
+            _df.at[idx, col] = None
+          else:
+            prev[col] = _df.at[idx, col]
+
+      _df = _df.set_index(_df['date'])
+      _df[['gdp', 'cpi', 'interest_rate']] = _df[['gdp', 'cpi','interest_rate']].resample('D').interpolate(method='linear')
+      return _df
+
+    def _split_train_test(data, last_n_months):
+      now = datetime.now()
+      month = int(now.strftime("%m")) - last_n_months
+      year = int(now.strftime("%Y"))
+      while month <= 0:
+        month = month + 12
+        year = year - 1
+      test_start_month = month + 1
+      test_start_year = year
+      if test_start_month > 12:
+        test_start_month = 1
+        test_start_year = year + 1
+        
+      return data[:f"{year}-{month}-31"], data[f"{test_start_year}-{test_start_month}-01":]
 
     def _split_x_y(data, look_back, include_cpi=False, include_gdp=False, include_interest_rate=False):
       datax, datay = [],[]
@@ -221,20 +251,31 @@ class ModelTrainer():
       print("------------------")
       
     ### 
-    ### Extracting Features
+    ### Propagating Data
     ###   
     if verbose:
-      print("Calculating Difference of GDP Growth Rate and CPI")
+      print("Propagating yearly and monthly data to daily...")
+    
+    _df = df
+    _df = propagate_data_to_daily(_df, self.COLUMNS_TO_PROPAGATE)
+    _malaysia_df = propagate_data_to_daily(malaysia_df, self.COLUMNS_TO_PROPAGATE)
 
-    _df = df[['from_myr']]
-    _df['gdp'] = malaysia_df['gdp'] - df['gdp']
-    _df['cpi'] = malaysia_df['cpi'] - df['cpi']
-    _df['interest_rate'] = malaysia_df['interest_rate'] - df['interest_rate']
+    if verbose:
+      print("Done propagating.")
+
+    ### 
+    ### Constructing Features
+    ###   
+    if verbose:
+      print("Constructing Features...")
+    
     _df['target'] = _df['from_myr']
+    last = _df['from_myr']
+
+    for col in self.COLUMNS_TO_CALCULATE_DIFFERENCE:
+      _df[col] = _malaysia_df[col] - _df[col]
 
     if self.compute_difference:
-      _idx = len(_df) - int(self.test_size * len(_df)) - 1
-      last = _df.iloc[_idx]['from_myr']
       _df['from_myr'] = _df['from_myr'].diff().fillna(0)
       if self.predict_change:
         _df['target'] = _df['from_myr']
@@ -242,7 +283,7 @@ class ModelTrainer():
       # _df['from_myr'] = rolling.mean().fillna(0)
 
     if verbose:
-      print("Done Calculating.")
+      print("Done Constructing.")
 
     ###
     ### Scaling the data
@@ -250,7 +291,8 @@ class ModelTrainer():
     if verbose:
       print("Performing Min Max Scaling...")
 
-    _df[['from_myr']] = MinMaxScaler().fit_transform(_df[['from_myr']])
+    self.scaler = MinMaxScaler()
+    _df[['from_myr']] = self.scaler.fit_transform(_df[['from_myr']])
     _df[['cpi']] = MinMaxScaler().fit_transform(_df[['cpi']])
     _df[['gdp']] = MinMaxScaler().fit_transform(_df[['gdp']])
     _df[['interest_rate']] = MinMaxScaler().fit_transform(_df[['interest_rate']])
@@ -258,22 +300,26 @@ class ModelTrainer():
     if verbose:
       print("Done Scaling.")
 
-    ###
-    ### Convert to Numpy Array
-    ###
-    if self.algorithm != "XGBOOST":
-      _df = np.array(_df[['from_myr', 'cpi', 'gdp', 'interest_rate', 'target']]).reshape(-1, 5)
-    else:
-      for i in range(1, self.window_size + 1):
-          _df['lag'+str(i)] = _df['from_myr'].shift(i).fillna(0)
-    
     ### 
     ### Split Dataset
     ###
     if verbose:
       print("Splitting Dataset...")
 
-    _test, _train = _split_train_test(_df, self.test_size)
+    _train, _test = _split_train_test(_df, self.test_n_months)
+    last = last[len(_train) - 1]
+
+    if verbose:
+      print("Done Splitting.")
+    
+    ###
+    ### Extracting Features
+    ###
+    if verbose:
+      print("Extracting Features...")
+      
+    _train = np.array(_train[['from_myr', 'cpi', 'gdp', 'interest_rate', 'target']]).reshape(-1, 5)
+    _test = np.array(_test[['from_myr', 'cpi', 'gdp', 'interest_rate', 'target']]).reshape(-1, 5)
 
     if self.algorithm == "XGBOOST":
       if not self.include_cpi:
@@ -293,7 +339,7 @@ class ModelTrainer():
       _x_train, _y_train = _split_x_y(_train, self.window_size, self.include_cpi, self.include_gdp, self.include_interest_rate)
 
     if verbose:
-      print("Done Splitting.")
+      print("Done Extracting.")
 
     ### 
     ### Reshape Dataset
@@ -337,8 +383,10 @@ class ModelTrainer():
       ###
       if verbose:
         print("Making Polynomial Features...")
+
       poly = PolynomialFeatures(degree=2, interaction_only=True)
       x_poly = poly.fit_transform(x_train)
+
       if verbose:
         print("Done Making.")
 
@@ -435,10 +483,11 @@ class ModelTrainer():
       if verbose:
         print("Fitting to Dataset...")
 
-      model.fit(x_train, y_train, validation_split=0.2, epochs = self.num_of_iteration, batch_size=1)
+      model.fit(x_train, y_train, validation_split=0.2, epochs = self.num_of_iteration, batch_size=30)
 
       if verbose:
         print("Done Fitting.")
+        
     elif self.algorithm == "XGBOOST":
       data = xgb.DMatrix(x_train,label=y_train) 
       #train the data
@@ -448,8 +497,14 @@ class ModelTrainer():
     
   def _evaluate_model(self, x_test, y_test, verbose=True, last=None):
     def _plot_actual_predict_graph(y_test, y_pred, currency_code, window_size):
+      max_bound = max(y_test)
+      min_bound = min(y_test)
+      max_bound = max_bound + 0.05*max_bound
+      min_bound = min_bound - 0.05*min_bound
       plt.figure(figsize=(15, 10))
       plt.subplot(2, 1, 1)
+      if self.same_scale:
+        plt.ylim([min_bound, max_bound])
       plt.title(f'Foreign Exchange Rate of MYR-{currency_code} with Window Size of {window_size} ({self.algorithm})')
       plt.plot(y_test, label = 'Actual', color = 'blue')
       plt.plot(y_pred, label = 'Predicted', color = 'orange')
@@ -471,10 +526,12 @@ class ModelTrainer():
 
       if self.algorithm == "LSTM" or self.algorithm == "XGBOOST":
         return
+
+      total = sum(map(abs, self.model.coef_))
       if self.algorithm == "POLYNOMIAL":
-        feat_importances = pd.Series(self.model.coef_)
+        feat_importances = pd.Series(self.model.coef_/total)
       else:
-        feat_importances = pd.Series(self.model.coef_, index=_index)
+        feat_importances = pd.Series(self.model.coef_/total, index=_index)
 
       plt.subplot(2, 1, 2)
 

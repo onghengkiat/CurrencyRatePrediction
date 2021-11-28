@@ -13,19 +13,18 @@ import { CgTime, CgTimelapse } from 'react-icons/cg';
 export default function DatasetStatistics({ currencyCode, statistics, pic2 }){
     return (
         <div>
-            <Container>
-                <Row>
-                    <Container id="dashboard-title" fluid>
-                        <Row className="justify-content-between">
-                            <Col>
-                                <GoGraph id="dashboard-title-icon"/>
-                                <h5><b>Dataset Statistics</b></h5>
-                                <h5 className="text-muted"><b>Currency Code: {currencyCode}</b></h5>
-                            </Col>
-                        </Row>
-                    </Container>
-                </Row>
-            </Container>
+            <Row>
+                <Container className="statistic-title" fluid>
+                    <Row className="justify-content-between">
+                        <Col>
+                            <GoGraph className="statistic-title-icon"/>
+                            <h5><b>Dataset Statistics</b></h5>
+                            <h5 className="text-muted"><b>Currency Code: {currencyCode}</b></h5>
+                        </Col>
+                    </Row>
+                </Container>
+            </Row>
+            
             <Row className="justify-content-center" md={2} xs={1}>
                 <Col className="chart-container">
                     <BigWord 
@@ -67,7 +66,9 @@ export default function DatasetStatistics({ currencyCode, statistics, pic2 }){
                 </Col>
             </Row>
 
-            <Image alt='actual_vs_predicted' src={ pic2 } className="responsive"/>
+            <Row className="justify-content-center">
+                <Image alt='actual_vs_predicted' src={ pic2 } className="responsive"/>
+            </Row>
             
         </div>
     );

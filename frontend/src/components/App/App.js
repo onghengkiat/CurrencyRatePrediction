@@ -6,6 +6,7 @@ import Home from '../Home/Home';
 import Dataset from '../Dataset/Dataset';
 import Spinner from '../Spinner/Spinner';
 import Statistics from '../Statistics/Statistics';
+// import Dashboard from '../Dashboard/Dashboard';
 
 import useError from '../../hooks/useError';
 import useSuccess from '../../hooks/useSuccess';
@@ -39,6 +40,11 @@ function App() {
             <Navbar/>      
             <Statistics setError={ setError } setLoading={ setLoading }/>
           </Route>
+
+          {/* <Route path="/dashboard">
+            <Navbar/>      
+            <Dashboard setError={ setError } setLoading={ setLoading }/>
+          </Route> */}
 
           <Route path="/">
             <Navbar/>      
