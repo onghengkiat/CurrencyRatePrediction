@@ -146,23 +146,13 @@ export default function Dashboard({ setError, setLoading }){
               </Col>
 
               <Col lg={8} className="dashboard-chart-outer-container">
-                <Card className="dashboard-chart-inner-container">
-                  <Card.Body>
-                    <div className="dashboard-chart-title">Time Trend</div>
-                    { timeTrendData ? <TimeTrend data={ timeTrendData }/> : <ErrorComponent />}
-                  </Card.Body>
-                </Card>
+                <TimeTrend data={ timeTrendData } chartTitle="Time Trend"/>
               </Col>
             </Row>
 
             <Row lg={2} xs={1}>
               <Col lg={8} className="dashboard-chart-outer-container">
-                <Card className="dashboard-chart-inner-container">
-                  <Card.Body>
-                    <div className="dashboard-chart-title">Actual vs Predicted (MYR to {currencyCode})</div>
-                    { predActualData ? <PredActual data={ predActualData }/> : <ErrorComponent />}
-                  </Card.Body>
-                </Card>
+                <PredActual data={ predActualData } chartTitle={`Actual vs Predicted (MYR to ${currencyCode})`}/>
               </Col>
 
               <Col lg={4} className="dashboard-chart-outer-container">
