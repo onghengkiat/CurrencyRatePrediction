@@ -28,6 +28,12 @@
     text-align: center;
 }
 
+.dashboard-chart-detail-header-text {
+    background-color: rgba(0,0,0,0) !important;
+    font-family: Open Sans;
+    border: None !important;
+}
+
 .dashboard-chart-detail-text-title {
     font-size: 14px;
     color: #6C757D;

@@ -19,9 +19,7 @@ export default function CurrencyDetail({ data, chartTitle }){
 
     return (
         <Card className="dashboard-chart-inner-container">
-            <Card.Header style={{"background-color": "rgba(0,0,0,0)"}}>
-                <div className="dashboard-chart-title">{chartTitle}</div>
-            </Card.Header>
+            <Card.Header className="dashboard-chart-detail-header-text">{chartTitle}</Card.Header>
         
             <Card.Body>
                 <Row>

@@ -12,8 +12,10 @@ export default function RateConversionPanel({ data, chartTitle }){
 
     return (
         <Card className="dashboard-chart-inner-container">
-          <Card.Body>
+          <Card.Header>
             <div className="dashboard-chart-title">{chartTitle}</div>
+          </Card.Header>
+          <Card.Body>
             <Form role="form" onSubmit={handleSubmit}>
                 <Form.Group>
                     <Form.Label>Country</Form.Label>

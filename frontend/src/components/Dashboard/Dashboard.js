@@ -132,6 +132,7 @@ export default function Dashboard({ setError, setLoading }){
         const response = await fetchCurrencyList();
         if (response.isError){
           setError(response);
+          setCurrencyList(null);
         } else {
           const data = response;
           setCurrencyList(data);
@@ -140,6 +141,7 @@ export default function Dashboard({ setError, setLoading }){
         const response2 = await fetchDashboardTimetrend(currencyCode);
         if (response2.isError){
           setError(response2);
+          setTimeTrendData(null);
         } else {
           const data = response2;
           setTimeTrendData(data);
@@ -148,6 +150,7 @@ export default function Dashboard({ setError, setLoading }){
         const response3 = await fetchDashboardActualPred(currencyCode);
         if (response3.isError){
           setError(response3);
+          setPredActualData(null);
         } else {
           const data = response3;
           setPredActualData(data);
@@ -156,6 +159,7 @@ export default function Dashboard({ setError, setLoading }){
         const response4 = await fetchDashboardCurrencyDetail(currencyCode);
         if (response4.isError){
           setError(response4);
+          setCurrencyDetailData(null);
         } else {
           const data = response4;
           setCurrencyDetailData(data);
@@ -187,7 +191,7 @@ export default function Dashboard({ setError, setLoading }){
               </Col>
 
               <Col md={4} className="dashboard-chart-outer-container">
-                <RateConversionPanel chartTitle="Rate Conversion" />
+                <RateConversionPanel data={ currencyList }chartTitle="Rate Conversion" />
               </Col>
             </Row>
         </div>
