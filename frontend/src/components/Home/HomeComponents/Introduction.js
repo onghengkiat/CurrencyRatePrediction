@@ -16,10 +16,7 @@ export default function Introduction(){
         />
       </Col>
       <Col sm lg="4" id="introduction">
-        <h1>Currency Exchange Rate Prediction</h1>
-        <p>
-          
-        </p>
+        <h1>Currency Exchange Rate Prediction (CurEx)</h1>
       </Col>
     </Row>
     )

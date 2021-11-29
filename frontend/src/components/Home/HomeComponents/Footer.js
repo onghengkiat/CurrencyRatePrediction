@@ -45,6 +45,12 @@ export default function Footer(){
               3. Yearly GDP Growth for each of the countries by World Bank
             </a>
           </Row>
+          <br/>
+          <Row>
+            <a href="https://api.worldbank.org/v2/en/indicator/FR.INR.RINR?downloadformat=excel">
+              4. Yearly Interest Rate for each of the countries by World Bank
+            </a>
+          </Row>
         </Col>
 
         <Col className="footer-col">
@@ -63,9 +69,11 @@ export default function Footer(){
           <Row>
             If you have any further questions about this website, you may contact me through
           </Row>
+          <br/>
           <Row>
             Email: onghengkiat105@gmail.com
           </Row>
+          <br/>
           <Row>
             Whatsapp: 011-11505490
           </Row>

@@ -28,6 +28,7 @@
     text-align: center;
 }
 
+/* Currency Detail Chart */
 .dashboard-chart-detail-header-text {
     background-color: rgba(0,0,0,0) !important;
     font-family: Open Sans;
@@ -49,6 +50,7 @@
     color: grey;
 }
 
+/* Rate Conversion Chart */
 .dashboard-chart-rateconversion-header-text {
     background-color: rgba(0,0,0,0) !important;
     font-family: Open Sans;

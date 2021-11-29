@@ -26,7 +26,7 @@ export default function Features() {
                                 <Accordian.Collapse eventKey="1">
                                     <Card.Body>
                                         <Card.Text>
-                                            Predictive modeling is a statistical technique using machine learning and data mining to predict and forecast likely future outcomes with the aid of historical and existing data
+                                            Machine Learning models are built to predict the future trends of the currency exchange rate
                                         </Card.Text>
                                     </Card.Body>
                                 </Accordian.Collapse>
@@ -41,7 +41,7 @@ export default function Features() {
                                 <Accordian.Collapse eventKey="2">
                                     <Card.Body>
                                         <Card.Text>
-                                            Model is evaluated and the performance evaluation is transparent to the users and displayed in the statistics section
+                                            Performance evaluation of all the models are transparent to the users in the "Statistics" page
                                         </Card.Text>
                                     </Card.Body>
                                 </Accordian.Collapse>
@@ -58,7 +58,7 @@ export default function Features() {
                                 <Accordian.Collapse eventKey="3">
                                     <Card.Body>
                                         <Card.Text>
-                                            Data is presented in different ways to provide more insightful visualizations of data and help in data analysis
+                                            Data are presented in different ways to provide more insightful visualizations of data and help in data analysis
                                         </Card.Text>
                                     </Card.Body>
                                 </Accordian.Collapse>
@@ -73,7 +73,7 @@ export default function Features() {
                                 <Accordian.Collapse eventKey="4">
                                     <Card.Body>
                                         <Card.Text>
-                                            Data is obtained by webscraping from the website built by a reliable organization which is Bank Negara Malaysia
+                                            Data is obtained and ensured to be always updated by webscraping from the website built by the reliable organizations
                                         </Card.Text>
                                     </Card.Body>
                                 </Accordian.Collapse>
