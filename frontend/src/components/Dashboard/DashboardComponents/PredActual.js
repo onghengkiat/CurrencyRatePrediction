@@ -35,6 +35,7 @@ export default function PredActual({ data }){
         containLabel: true,
         bottom: 0,
         left: 0,
+        right: 0,
       },
       xAxis: [
         {
@@ -50,44 +51,23 @@ export default function PredActual({ data }){
           },
         }
       ],
-      yAxis: [
-        {
-          type: 'value',
-          name: legends[0],
-          scale: true,
-          position: 'left',
-          axisLine: {
-            show: true,
-            lineStyle: {
-              color: colors[0]
-            }
-          },
-          splitLine: {
-            show: false,
-          },
-          axisLabel: {
-            formatter: '{value}'
+      yAxis: {
+        type: 'value',
+        name: 'Rate',
+        scale: true,
+        axisLine: {
+          show: true,
+          lineStyle: {
+            color: 'black'
           }
         },
-        {
-          type: 'value',
-          name: legends[1],
-          scale: true,
-          position: 'right',
-          axisLine: {
-            show: true,
-            lineStyle: {
-              color: colors[1]
-            }
-          },
-          splitLine: {
-            show: false,
-          },
-          axisLabel: {
-            formatter: '{value}'
-          }
+        splitLine: {
+          show: false,
         },
-      ],
+        axisLabel: {
+          formatter: '{value}'
+        }
+      },
       series: [{
               name: legends[0],
               type: "line",
@@ -99,7 +79,6 @@ export default function PredActual({ data }){
               name: legends[1],
               type: "line",
               showSymbol: false,
-              yAxisIndex: 1,
               data: data.predicted,
               markLine: markLineData,
           },
