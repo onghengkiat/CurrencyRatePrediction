@@ -28,6 +28,21 @@
     text-align: center;
 }
 
+.dashboard-chart-detail-text-title {
+    font-size: 14px;
+    color: #6C757D;
+}
+
+.dashboard-chart-detail-text {
+    font-size: 14px;
+    text-align: right;
+}
+
+.dashboard-chart-footer-text {
+    font-size: 14px;
+    color: grey;
+}
+
 /* 
 Refer to Statistics.css for the sidepanel css 
 .side-panel {

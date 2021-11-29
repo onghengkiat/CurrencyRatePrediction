@@ -6,10 +6,11 @@ import Col from 'react-bootstrap/Col';
 import { URL_PREFIX } from '../../constants/API';
 
 import './Dashboard.css';
-import ErrorComponent from './DashboardComponents/ErrorComponent';
 import SidePanel from './DashboardComponents/SidePanel';
+import CurrencyDetail from './DashboardComponents/CurrencyDetail';
 import TimeTrend from './DashboardComponents/TimeTrend';
 import PredActual from './DashboardComponents/PredActual';
+import RateConversionPanel from './DashboardComponents/RateConversionPanel';
 import { BACKEND_SERVER_ERROR } from '../../constants/error';
 
 async function fetchCurrencyList() {
@@ -87,12 +88,38 @@ async function fetchDashboardActualPred(currency_code) {
   })
 }
 
+async function fetchDashboardCurrencyDetail(currency_code) {
+  return fetch(`${URL_PREFIX}dashboard/currencydetail?currency_code=${currency_code}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    if (response.ok) {
+      return response.json();
+    }
+    throw response;
+  })
+  .then(data => data.data)
+  .catch(response => { 
+    // case when backend server is working, and sent frontend the error message
+    if (response.isError) {
+      return response.json();
+    } else {
+      // case when backend server is not working fine and didn't send any useful info to frontend
+      return BACKEND_SERVER_ERROR;
+    }
+  })
+}
+
 export default function Dashboard({ setError, setLoading }){
 
     const [currencyCode, setCurrencyCode] = useState("USD");
     const [currencyList, setCurrencyList] = useState(["USD"]);
     const [timeTrendData, setTimeTrendData] = useState(null);
     const [predActualData, setPredActualData] = useState(null);
+    const [currencyDetailData, setCurrencyDetailData] = useState(null);
     const [sidePanelIsOpened, setSidePanelIsOpened] = useState(true);
     
   
@@ -125,6 +152,14 @@ export default function Dashboard({ setError, setLoading }){
           const data = response3;
           setPredActualData(data);
         }
+
+        const response4 = await fetchDashboardCurrencyDetail(currencyCode);
+        if (response4.isError){
+          setError(response4);
+        } else {
+          const data = response4;
+          setCurrencyDetailData(data);
+        }
         setLoading(false);
       }
       fetchData();
@@ -136,31 +171,23 @@ export default function Dashboard({ setError, setLoading }){
       <Container id="dashboard-container" fluid>
         <SidePanel isOpened={ sidePanelIsOpened } setIsOpened={ setSidePanelIsOpened } currencyList={ currencyList } setCurrencyCode={ setCurrencyCode }/>
         <div className={rightContentClassname}>
-            <Row lg={2} xs={1} className="dashboard-row">
-              <Col lg={4} className="dashboard-chart-outer-container">
-                <Card className="dashboard-chart-inner-container">
-                  <Card.Body>
-                    <div className="dashboard-chart-title">Currency Detail</div>
-                  </Card.Body>
-                </Card>
+            <Row md={2} xs={1} className="dashboard-row">
+              <Col md={4} className="dashboard-chart-outer-container">
+                <CurrencyDetail data={ currencyDetailData } chartTitle="Currency Detail" />
               </Col>
 
-              <Col lg={8} className="dashboard-chart-outer-container">
+              <Col md={8} className="dashboard-chart-outer-container">
                 <TimeTrend data={ timeTrendData } chartTitle="Time Trend"/>
               </Col>
             </Row>
 
-            <Row lg={2} xs={1}>
-              <Col lg={8} className="dashboard-chart-outer-container">
+            <Row md={2} xs={1}>
+              <Col md={8} className="dashboard-chart-outer-container">
                 <PredActual data={ predActualData } chartTitle={`Actual vs Predicted (MYR to ${currencyCode})`}/>
               </Col>
 
-              <Col lg={4} className="dashboard-chart-outer-container">
-                <Card className="dashboard-chart-inner-container">
-                  <Card.Body>
-                    <div className="dashboard-chart-title">Rate Conversion</div>
-                  </Card.Body>
-                </Card>
+              <Col md={4} className="dashboard-chart-outer-container">
+                <RateConversionPanel chartTitle="Rate Conversion" />
               </Col>
             </Row>
         </div>

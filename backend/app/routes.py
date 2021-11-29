@@ -1,16 +1,13 @@
 from app import app, df, scalers, currency_codes, malaysia_df
 from flask import request, jsonify, send_file
 from app.util import missing_param_handler
-from constants import MODEL_SAVE_PATH, WINDOW_SIZE, MODEL_FILENAME
+from constants import MODEL_SAVE_PATH, WINDOW_SIZE, MODEL_FILENAME, CURRENCY_TO_COUNTRY
 from operator import itemgetter
 from datetime import timedelta
 import os
-import tempfile
 from flask_cors import cross_origin
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 from tensorflow.keras.models import load_model
 from modeltrainer import ModelTrainer
 from sklearn.preprocessing import MinMaxScaler, PolynomialFeatures
@@ -193,6 +190,25 @@ def get_currency_list():
 def get_algorithm_list():
     try: 
         return jsonify({"message": "Successful", "data": ModelTrainer.ALGORITHMS_AVAILABLE}), 200
+    except Exception as e:
+        print(e)
+        return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
+
+@app.route("/dashboard/currencydetail")
+@cross_origin(origin='*')
+@missing_param_handler
+def get_dashboard_currencydetail():
+    currency_code = request.args.get('currency_code', None)
+    try: 
+        latest_data = df[df['currency_code'] == currency_code].iloc[-1]
+        data = {
+            "updated_date": latest_data["date"].strftime("%d/%m/%Y"),
+            "from_myr": round(latest_data["from_myr"], 4),
+            "to_myr": round(latest_data["to_myr"], 4),
+            "currency_code": currency_code,
+            "country": CURRENCY_TO_COUNTRY.get(currency_code, "Missing")
+        }
+        return jsonify({"message": "Successful", "data": data}), 200
     except Exception as e:
         print(e)
         return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400

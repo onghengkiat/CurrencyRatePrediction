@@ -133,7 +133,7 @@ class WebScraper:
             }
         }
 
-        self.GDP_MAPPING = {
+        self.CountryToCurrency = {
             "United States": "USD",
             "United Kingdom": "GBP",
             "Euro area": "EUR",
@@ -609,15 +609,15 @@ class WebScraper:
         column_names = gdp_df.columns.tolist()
 
         # Search for the countries that are not found in the GDP database and filter their currency codes out from the df
-        for key, val in self.GDP_MAPPING.items():
+        for key, val in self.CountryToCurrency.items():
             if key not in gdp_df["Country Name"].unique():
                 print(key + " is not found in the GDP database")
-                df = df[df["currency_code"] != self.GDP_MAPPING[key]]
+                df = df[df["currency_code"] != self.CountryToCurrency[key]]
 
         df["gdp"] = np.nan
         for i, row in gdp_df.iterrows():
 
-            currency_code = self.GDP_MAPPING.get(row["Country Name"], None)
+            currency_code = self.CountryToCurrency.get(row["Country Name"], None)
             if currency_code is None:
                 continue
 
@@ -643,15 +643,15 @@ class WebScraper:
         column_names = interest_rate_df.columns.tolist()[:-1]
 
         # Search for the countries that are not found in the GDP database and filter their currency codes out from the df
-        for key, val in self.GDP_MAPPING.items():
+        for key, val in self.CountryToCurrency.items():
             if key not in interest_rate_df["Country Name"].unique():
                 print(key + " is not found in the Interest Rate database")
-                df = df[df["currency_code"] != self.GDP_MAPPING[key]]
+                df = df[df["currency_code"] != self.CountryToCurrency[key]]
 
         df["interest_rate"] = np.nan
         for i, row in interest_rate_df.iterrows():
 
-            currency_code = self.GDP_MAPPING.get(row["Country Name"], None)
+            currency_code = self.CountryToCurrency.get(row["Country Name"], None)
             if currency_code is None:
                 continue
 

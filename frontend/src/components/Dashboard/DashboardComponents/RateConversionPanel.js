@@ -1,32 +1,31 @@
 import React, { useRef } from 'react';
 import Form from "react-bootstrap/Form";
 import Button from 'react-bootstrap/Button';
+import Card from 'react-bootstrap/Card';
 
-export default function RateConversionPanel({ currencyList, setCurrencyCode }){
+export default function RateConversionPanel({ data, chartTitle }){
     const currency_code_field = useRef(null);
 
     const handleSubmit = async e => {
         e.preventDefault();
-        setCurrencyCode(currency_code_field.current.value);
     }
+
     return (
-        <Form className="side-panel" role="form" onSubmit={handleSubmit}>
-            <div id="side-panel-title-container">
-                <div id="side-panel-title">Control Panel</div>
-            </div>
-            <Form.Group>
-                <Form.Label>Select Currency Code : </Form.Label>
-                <Form.Control as="select" ref={ currency_code_field } custom>
-                    {
-                        currencyList.map((value, _) => {
-                            return (  
-                                <option value={value}>{value}</option>
-                            )
-                        })
-                    }
-                </Form.Control>
-            </Form.Group>
-            <Button type="submit" className="responsive" id="side-panel-button">Apply Changes</Button>
-        </Form>
-    )
+        <Card className="dashboard-chart-inner-container">
+          <Card.Body>
+            <div className="dashboard-chart-title">{chartTitle}</div>
+            <Form role="form" onSubmit={handleSubmit}>
+                <Form.Group>
+                    <Form.Label>Country</Form.Label>
+                    <Form.Control as="select" ref={ currency_code_field } custom>
+                        [1, 2, 3]
+                    </Form.Control>
+                </Form.Group>
+            </Form>
+          </Card.Body>
+          <Card.Footer>
+            <Button className="responsive">Apply Changes</Button>
+          </Card.Footer>
+        </Card>
+      )
 }

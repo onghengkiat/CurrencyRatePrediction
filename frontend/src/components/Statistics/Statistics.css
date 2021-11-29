@@ -23,6 +23,8 @@
     background-color: #343a40;
     color: white;
     transition: 0.5s;
+    
+    cursor: pointer;
 }
 
 .side-panel-toggle-icon {

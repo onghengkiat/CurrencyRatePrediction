@@ -14,3 +14,33 @@ MODEL_ONLY_RATE = "RATE_ONLY"
 MODEL_SAVE_PATH = "./model"
 MODEL_FILENAME = "model"
 WINDOW_SIZE = 3
+
+CURRENCY_TO_COUNTRY = {
+    "USD": "United States",
+    "GBP": "United Kingdom",
+    "EUR": "Euro area",
+    "JPY": "Japan",
+    "CHF": "Switzerland",
+    "AUD": "Australia",
+    "CAD": "Canada",
+    "SGD": "Singapore",
+    "HKD": "Hong Kong SAR, China",
+    "THB": "Thailand",
+    "PHP": "Philippines",
+    "TWD": "Taiwan",
+    "KRW": "Korea, Rep.",
+    "IDR": "Indonesia",
+    "SAR": "Saudi Arabia",
+    "CNY": "China",
+    "BND": "Brunei Darussalam",
+    "VND": "Vietnam",
+    "KHR": "Cambodia",
+    "NZD": "New Zealand",
+    "MMK": "Myanmar",
+    "INR": "India",
+    "AED": "United Arab Emirates",
+    "PKR": "Pakistan",
+    "NPR": "Nepal",
+    "EGP": "Egypt, Arab Rep.",
+    "MYR": "Malaysia",
+}
