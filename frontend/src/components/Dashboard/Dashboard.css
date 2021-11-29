@@ -44,9 +44,25 @@
     text-align: right;
 }
 
-.dashboard-chart-footer-text {
+.dashboard-chart-detail-footer-text {
     font-size: 14px;
     color: grey;
+}
+
+.dashboard-chart-rateconversion-header-text {
+    background-color: rgba(0,0,0,0) !important;
+    font-family: Open Sans;
+    border: None !important;
+}
+
+.dashboard-chart-rateconversion-footer {
+    background-color: rgba(0,0,0,0) !important;
+    border: None !important;
+    text-align: center;
+}
+
+.dashboard-chart-rateconversion-footer-button {
+    width: 70%;
 }
 
 /* 

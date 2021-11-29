@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import ErrorComponent from './ErrorComponent';
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
@@ -59,7 +59,7 @@ export default function CurrencyDetail({ data, chartTitle }){
                     </Col>
                 </Row>
             </Card.Body>
-            <Card.Footer className="dashboard-chart-footer-text">
+            <Card.Footer className="dashboard-chart-detail-footer-text">
                 Updated at <b>{data.updated_date}</b>
             </Card.Footer>
         </Card>

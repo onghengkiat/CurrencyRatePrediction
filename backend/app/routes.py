@@ -213,6 +213,26 @@ def get_dashboard_currencydetail():
         print(e)
         return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
 
+@app.route("/dashboard/rateconversion")
+@cross_origin(origin='*')
+@missing_param_handler
+def get_dashboard_rateconversion():
+    currency_code = request.args.get('currency_code', None)
+    try: 
+        latest_data = df[df['currency_code'] == currency_code].iloc[-1]
+        myr_to_others = {}
+        for currency_code in currency_codes:
+            myr_to_others[currency_code] = df[df['currency_code'] == currency_code].iloc[-1]["from_myr"]
+        data = {
+            "currency_list": currency_codes,
+            "to_myr": latest_data["to_myr"],
+            "myr_to_others": myr_to_others
+        }
+        return jsonify({"message": "Successful", "data": data}), 200
+    except Exception as e:
+        print(e)
+        return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
+
 @app.route("/dashboard/timetrend")
 @cross_origin(origin='*')
 @missing_param_handler

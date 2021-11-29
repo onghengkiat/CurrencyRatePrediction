@@ -1,6 +1,5 @@
 import React, {useState, useEffect} from 'react';
 import Container from 'react-bootstrap/Container';
-import Card from 'react-bootstrap/Card';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import { URL_PREFIX } from '../../constants/API';
@@ -113,6 +112,31 @@ async function fetchDashboardCurrencyDetail(currency_code) {
   })
 }
 
+async function fetchRateConversion(currency_code) {
+  return fetch(`${URL_PREFIX}dashboard/rateconversion?currency_code=${currency_code}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    if (response.ok) {
+      return response.json();
+    }
+    throw response;
+  })
+  .then(data => data.data)
+  .catch(response => { 
+    // case when backend server is working, and sent frontend the error message
+    if (response.isError) {
+      return response.json();
+    } else {
+      // case when backend server is not working fine and didn't send any useful info to frontend
+      return BACKEND_SERVER_ERROR;
+    }
+  })
+}
+
 export default function Dashboard({ setError, setLoading }){
 
     const [currencyCode, setCurrencyCode] = useState("USD");
@@ -120,6 +144,7 @@ export default function Dashboard({ setError, setLoading }){
     const [timeTrendData, setTimeTrendData] = useState(null);
     const [predActualData, setPredActualData] = useState(null);
     const [currencyDetailData, setCurrencyDetailData] = useState(null);
+    const [rateConversionData, setRateConversionData] = useState(null);
     const [sidePanelIsOpened, setSidePanelIsOpened] = useState(true);
     
   
@@ -164,6 +189,16 @@ export default function Dashboard({ setError, setLoading }){
           const data = response4;
           setCurrencyDetailData(data);
         }
+
+        const response5 = await fetchRateConversion(currencyCode);
+        if (response5.isError){
+          setError(response5);
+          setRateConversionData(null);
+        } else {
+          const data = response5;
+          setRateConversionData(data);
+        }
+
         setLoading(false);
       }
       fetchData();
@@ -191,7 +226,7 @@ export default function Dashboard({ setError, setLoading }){
               </Col>
 
               <Col md={4} className="dashboard-chart-outer-container">
-                <RateConversionPanel data={ currencyList }chartTitle="Rate Conversion" />
+                <RateConversionPanel data={ rateConversionData }chartTitle="Rate Conversion" />
               </Col>
             </Row>
         </div>
