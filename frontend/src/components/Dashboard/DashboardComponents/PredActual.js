@@ -1,9 +1,27 @@
 import React from 'react';
 import ReactECharts from "echarts-for-react";
 
-export default function TimeTrend({ data }){
-    const colors = ['blue', 'green', 'red'];
-    const legends = ["Interest Rate", "GDP Growth Rate", "CPI"]
+export default function PredActual({ data }){
+    const colors = ['blue', '#ff8200'];
+    const legends = ['Actual', 'Predicted']
+    const markLineData = {
+      symbol: 'none',
+      lineStyle: {
+        type: 'dashed',
+        color: 'grey'
+      },
+      label: {          
+        formatter: 'Forecast',
+        color: 'grey',
+        fontSize: '12px',
+      },
+      data: [
+        {
+          name: "forecast",
+          xAxis: data.markLinePos,
+        }
+      ]
+    }
     
     const option = {
       color: colors,
@@ -48,7 +66,7 @@ export default function TimeTrend({ data }){
             show: false,
           },
           axisLabel: {
-            formatter: '{value} %'
+            formatter: '{value}'
           }
         },
         {
@@ -69,46 +87,22 @@ export default function TimeTrend({ data }){
             formatter: '{value}'
           }
         },
-        {
-          type: 'value',
-          name: legends[2],
-          scale: true,
-          position: 'right',
-          offset: 80,
-          axisLine: {
-            show: true,
-            lineStyle: {
-              color: colors[2]
-            }
-          },
-          splitLine: {
-            show: false,
-          },
-          axisLabel: {
-            formatter: '{value} %'
-          }
-        },
       ],
       series: [{
               name: legends[0],
               type: "line",
               showSymbol: false,
-              data: data.interest_rate,
+              data: data.actual,
+              markLine: markLineData,
           },
           {
               name: legends[1],
               type: "line",
               showSymbol: false,
               yAxisIndex: 1,
-              data: data.cpi,
+              data: data.predicted,
+              markLine: markLineData,
           },
-          {
-              name: legends[2],
-              type: "line",
-              showSymbol: false,
-              yAxisIndex: 2,
-              data: data.gdp,
-          }
       ]
     };
 

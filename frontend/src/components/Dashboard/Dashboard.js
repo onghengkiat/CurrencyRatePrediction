@@ -9,6 +9,7 @@ import './Dashboard.css';
 import ErrorComponent from './DashboardComponents/ErrorComponent';
 import SidePanel from './DashboardComponents/SidePanel';
 import TimeTrend from './DashboardComponents/TimeTrend';
+import PredActual from './DashboardComponents/PredActual';
 import { BACKEND_SERVER_ERROR } from '../../constants/error';
 
 async function fetchCurrencyList() {
@@ -61,11 +62,37 @@ async function fetchDashboardTimetrend(currency_code) {
   })
 }
 
+async function fetchDashboardActualPred(currency_code) {
+  return fetch(`${URL_PREFIX}dashboard/actualpred?currency_code=${currency_code}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    if (response.ok) {
+      return response.json();
+    }
+    throw response;
+  })
+  .then(data => data.data)
+  .catch(response => { 
+    // case when backend server is working, and sent frontend the error message
+    if (response.isError) {
+      return response.json();
+    } else {
+      // case when backend server is not working fine and didn't send any useful info to frontend
+      return BACKEND_SERVER_ERROR;
+    }
+  })
+}
+
 export default function Dashboard({ setError, setLoading }){
 
     const [currencyCode, setCurrencyCode] = useState("USD");
     const [currencyList, setCurrencyList] = useState(["USD"]);
     const [timeTrendData, setTimeTrendData] = useState(null);
+    const [predActualData, setPredActualData] = useState(null);
     const [sidePanelIsOpened, setSidePanelIsOpened] = useState(true);
     
   
@@ -82,13 +109,21 @@ export default function Dashboard({ setError, setLoading }){
           const data = response;
           setCurrencyList(data);
         }
-
+        
         const response2 = await fetchDashboardTimetrend(currencyCode);
         if (response2.isError){
           setError(response2);
         } else {
           const data = response2;
           setTimeTrendData(data);
+        }
+
+        const response3 = await fetchDashboardActualPred(currencyCode);
+        if (response3.isError){
+          setError(response3);
+        } else {
+          const data = response3;
+          setPredActualData(data);
         }
         setLoading(false);
       }
@@ -114,7 +149,7 @@ export default function Dashboard({ setError, setLoading }){
                 <Card className="dashboard-chart-inner-container">
                   <Card.Body>
                     <div className="dashboard-chart-title">Time Trend</div>
-                    { (!timeTrendData || timeTrendData.length === 0) ? <ErrorComponent /> : <TimeTrend data={ timeTrendData }/>}
+                    { timeTrendData ? <TimeTrend data={ timeTrendData }/> : <ErrorComponent />}
                   </Card.Body>
                 </Card>
               </Col>
@@ -124,7 +159,8 @@ export default function Dashboard({ setError, setLoading }){
               <Col lg={8} className="dashboard-chart-outer-container">
                 <Card className="dashboard-chart-inner-container">
                   <Card.Body>
-                    <div className="dashboard-chart-title">Rates</div>
+                    <div className="dashboard-chart-title">Actual vs Predicted (MYR to {currencyCode})</div>
+                    { predActualData ? <PredActual data={ predActualData }/> : <ErrorComponent />}
                   </Card.Body>
                 </Card>
               </Col>

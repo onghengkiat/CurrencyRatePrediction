@@ -9,32 +9,6 @@ import DatasetStatistics from './StatisticsComponents/DatasetStatistics';
 import { BACKEND_SERVER_ERROR } from '../../constants/error';
 
 
-async function fetchActualPredGraph(currencyCode, algorithm, include_cpi, include_gdp) {
-    return fetch(`${URL_PREFIX}graph/statistic?currency_code=${currencyCode}&algorithm=${algorithm}&include_cpi=${include_cpi}&include_gdp=${include_gdp}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    .then(response => {
-      if (response.ok) {
-        return response;
-      }
-      throw response;
-    })
-    .then(data => data.blob())
-    .then(blob => URL.createObjectURL(blob))
-    .catch(response => { 
-      // case when backend server is working, and sent frontend the error message
-      if (response.isError) {
-        return response.json();
-      } else {
-        // case when backend server is not working fine and didn't send any useful info to frontend
-        return BACKEND_SERVER_ERROR;
-      }
-    })
-}
-
 async function fetchModelPerformanceGraph(currencyCode, algorithm, include_cpi, include_gdp) {
   return fetch(`${URL_PREFIX}graph/modelperformance?currency_code=${currencyCode}&algorithm=${algorithm}&include_cpi=${include_cpi}&include_gdp=${include_gdp}`, {
     method: 'GET',
@@ -164,7 +138,6 @@ async function fetchAlgorithmList() {
 export default function Statistics({ setError, setLoading }){
 
     const [pic, setPic] = useState();
-    const [pic2, setPic2] = useState();
     const [currencyCode, setCurrencyCode] = useState("USD");
     const [algorithm, setAlgorithm] = useState("LSTM");
     const [includeCPI, setCPI] = useState(false);
@@ -205,14 +178,6 @@ export default function Statistics({ setError, setLoading }){
           setStatistics(data);
         }
 
-        const response4 = await fetchActualPredGraph(currencyCode, algorithm, includeCPI, includeGDP);
-        if (response4.isError){
-          setError(response4);
-        } else {
-          const data = response4;
-          setPic2(data);
-        }
-
         const response5 = await fetchModelPerformance(currencyCode, algorithm, includeCPI, includeGDP);
         if (response5.isError){
           setError(response5);
@@ -243,7 +208,7 @@ export default function Statistics({ setError, setLoading }){
             <SidePanel isOpened={ sidePanelIsOpened } setIsOpened={ setSidePanelIsOpened } currencyList={ currencyList } setCurrencyCode={ setCurrencyCode } algorithmList={ algorithmList } setAlgorithm={ setAlgorithm } setCPI={ setCPI } setGDP={ setGDP }/>
             
             <div className={rightContentClassname}>
-                <DatasetStatistics currencyCode={ currencyCode } statistics={ statistics } pic2={ pic2 }/>
+                <DatasetStatistics currencyCode={ currencyCode } statistics={ statistics }/>
                 <ModelStatistics pic={ pic } modelPerformance={ modelPerformance } algorithm={ algorithm }/>
             </div>
         </Container>

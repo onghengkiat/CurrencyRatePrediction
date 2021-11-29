@@ -10,7 +10,7 @@ import { GoGraph } from 'react-icons/go';
 import { CgTime, CgTimelapse } from 'react-icons/cg';
 
 
-export default function DatasetStatistics({ currencyCode, statistics, pic2 }){
+export default function DatasetStatistics({ currencyCode, statistics }){
     return (
         <div>
             <Row>
@@ -65,11 +65,6 @@ export default function DatasetStatistics({ currencyCode, statistics, pic2 }){
                     />
                 </Col>
             </Row>
-
-            <Row className="justify-content-center">
-                <Image alt='actual_vs_predicted' src={ pic2 } className="responsive"/>
-            </Row>
-            
         </div>
     );
 }

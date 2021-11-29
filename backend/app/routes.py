@@ -145,7 +145,78 @@ def get_model_performance():
         print(e)
         return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
 
-@app.route("/graph/statistic")
+@app.route("/statistic")
+@cross_origin(origin='*')
+@missing_param_handler
+def get_statistic():
+        currency_code = request.args.get('currency_code', None)
+        try: 
+            _df = df[df['currency_code'] == currency_code]
+            _df.reset_index(inplace=True)
+            min_rate = _df['from_myr'][0]
+            min_date = _df['date'][0].strftime('%d %b %Y')
+            max_rate = _df['from_myr'][0]
+            max_date = _df['date'][0].strftime('%d %b %Y')
+
+            for _, row in _df.iterrows():
+                if row['from_myr'] <= min_rate:
+                    min_rate = row['from_myr']
+                    min_date = row['date'].strftime('%d %b %Y')
+                elif row['from_myr'] >= max_rate:
+                    max_rate = row['from_myr']
+                    max_date = row['date'].strftime('%d %b %Y')
+            data = {
+                "min_rate": min_rate,
+                "min_date": min_date,
+                "max_rate": max_rate,
+                "max_date": max_date,
+            }
+            return jsonify({"message": "Successful", "data": data}), 200
+        except Exception as e:
+            print(e)
+            return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
+
+@app.route("/currencylist")
+@cross_origin(origin='*')
+@missing_param_handler
+def get_currency_list():
+    try: 
+        return jsonify({"message": "Successful", "data": currency_codes}), 200
+    except Exception as e:
+        print(e)
+        return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
+
+
+@app.route("/algorithmlist")
+@cross_origin(origin='*')
+@missing_param_handler
+def get_algorithm_list():
+    try: 
+        return jsonify({"message": "Successful", "data": ModelTrainer.ALGORITHMS_AVAILABLE}), 200
+    except Exception as e:
+        print(e)
+        return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
+
+@app.route("/dashboard/timetrend")
+@cross_origin(origin='*')
+@missing_param_handler
+def get_dashboard_timetrend():
+    currency_code = request.args.get('currency_code', None)
+    try: 
+        _df = df[df['currency_code'] == currency_code]
+        _df = _df.groupby([pd.DatetimeIndex(_df.date).to_period('M')]).nth(0).reset_index(drop=True)
+        _df['date'] = _df['date'].dt.strftime("%Y/%m/%d")
+        data = {
+            "gdp": _df[["date", "gdp"]].values.tolist(),
+            "cpi": _df[["date", "cpi"]].values.tolist(),
+            "interest_rate": _df[["date", "interest_rate"]].values.tolist()
+        }
+        return jsonify({"message": "Successful", "data": data}), 200
+    except Exception as e:
+        print(e)
+        return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
+
+@app.route("/dashboard/actualpred")
 @cross_origin(origin='*')
 @missing_param_handler
 def get_actual_predicted_graph():
@@ -226,21 +297,6 @@ def get_actual_predicted_graph():
         results = results.reshape(results.shape[0], 1)
         return results
 
-    def _plot_actual_predict_graph(y_test, y_pred, date, currency_code):
-        # Visualizing the results
-        plt.figure(figsize=(10, 5))
-        plt.title(f'Foreign Exchange Rate of MYR-{currency_code}')
-        plt.plot_date(date, y_test, fmt='-', color = 'blue', label = 'Actual')
-        plt.plot_date(date, y_pred, fmt='-', color = 'orange', label = 'Predicted')
-        plt.legend()
-
-        # Specify formatter for the dates on X-axis
-        locator = mdates.MonthLocator(interval=1)
-        fmt = mdates.DateFormatter('%b\n%Y')
-        X = plt.gca().xaxis
-        X.set_major_locator(locator)
-        X.set_major_formatter(fmt)
-
     FORECAST_DAYS = 30
     try:
         currency_code = request.args.get('currency_code', None)
@@ -270,6 +326,7 @@ def get_actual_predicted_graph():
         _df = _df[-90:]
         date = _df["date"].tolist()[WINDOW_SIZE:]
         date = date[-90:]
+        markLineIndex = len(date) - 1
 
         # Data Preprocessing
         x, y, prev_data = _preprocess_data(_df, scaler, algorithm, include_cpi=include_cpi, include_gdp=include_gdp)
@@ -289,106 +346,14 @@ def get_actual_predicted_graph():
             date.append(date[-1] + timedelta(days=1))
             # Actual datapoints will be empty
             y_actual = np.concatenate((y_actual, np.array([[None]])))
-        
-        # Plot the actual predict graph and save it to be sent to frontend
-        _plot_actual_predict_graph(y_actual, y_pred, date, currency_code)
-        tmpdir = tempfile.mkdtemp() 
-        directory = os.path.join(tmpdir, 'actual_predicted_graph.png')
-        plt.savefig(directory)
-    except Exception as e:
-        print(e)
-        return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
-    try:
-        r = send_file(directory, as_attachment=False)
-        return r
-    except Exception as e:
-        print(e)
-        return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
 
-@app.route("/statistic")
-@cross_origin(origin='*')
-@missing_param_handler
-def get_statistic():
-        currency_code = request.args.get('currency_code', None)
-        try: 
-            _df = df[df['currency_code'] == currency_code]
-            _df.reset_index(inplace=True)
-            min_rate = _df['from_myr'][0]
-            min_date = _df['date'][0].strftime('%d %b %Y')
-            max_rate = _df['from_myr'][0]
-            max_date = _df['date'][0].strftime('%d %b %Y')
-
-            for _, row in _df.iterrows():
-                if row['from_myr'] <= min_rate:
-                    min_rate = row['from_myr']
-                    min_date = row['date'].strftime('%d %b %Y')
-                elif row['from_myr'] >= max_rate:
-                    max_rate = row['from_myr']
-                    max_date = row['date'].strftime('%d %b %Y')
-            data = {
-                "min_rate": min_rate,
-                "min_date": min_date,
-                "max_rate": max_rate,
-                "max_date": max_date,
-            }
-            return jsonify({"message": "Successful", "data": data}), 200
-        except Exception as e:
-            print(e)
-            return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
-
-@app.route("/currencylist")
-@cross_origin(origin='*')
-@missing_param_handler
-def get_currency_list():
-    try: 
-        return jsonify({"message": "Successful", "data": currency_codes}), 200
-    except Exception as e:
-        print(e)
-        return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
-
-
-@app.route("/algorithmlist")
-@cross_origin(origin='*')
-@missing_param_handler
-def get_algorithm_list():
-    try: 
-        return jsonify({"message": "Successful", "data": ModelTrainer.ALGORITHMS_AVAILABLE}), 200
-    except Exception as e:
-        print(e)
-        return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
-
-@app.route("/dashboard/timetrend")
-@cross_origin(origin='*')
-@missing_param_handler
-def get_dashboard_timetrend():
-    currency_code = request.args.get('currency_code', None)
-    try: 
-        _df = df[df['currency_code'] == currency_code]
-        _df = _df.groupby([pd.DatetimeIndex(_df.date).to_period('M')]).nth(0).reset_index(drop=True)
-        _df['date'] = _df['date'].dt.strftime("%Y/%m/%d")
-        data = [
-            {
-                "name": "GDP Growth Rate",
-                "type": "line",
-                "showSymbol": False,
-                "data": _df[["date", "gdp"]].values.tolist()
-            },
-            {
-                "name": "CPI",
-                "type": "line",
-                "showSymbol": False,
-                "yAxisIndex": 1,
-                "data": _df[["date", "cpi"]].values.tolist()
-            },
-            {
-                "name": "Interest Rate",
-                "type": "line",
-                "showSymbol": False,
-                "yAxisIndex": 2,
-                "data": _df[["date", "interest_rate"]].values.tolist()
-            }
-        ]
-
+        date = [d.strftime("%Y/%m/%d") for d in date]
+        markLinePos = date[markLineIndex]
+        data = {
+            "actual": (np.vstack((date, y_actual.flatten())).T).tolist(),
+            "predicted": (np.vstack((date, y_pred.flatten())).T).tolist(),
+            "markLinePos": markLinePos
+        }
         return jsonify({"message": "Successful", "data": data}), 200
     except Exception as e:
         print(e)
