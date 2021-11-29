@@ -54,6 +54,7 @@ def get_dashboard():
             "rate_is_increased_from_myr": rate_is_increased_from_myr,
             "gdp": round(row['gdp'], 4),
             "cpi": round(row['cpi'], 4),
+            "interest_rate": round(row['interest_rate'], 4),
         }
 
     try: 

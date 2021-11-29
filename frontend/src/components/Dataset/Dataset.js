@@ -1,5 +1,4 @@
 import { icons } from './TableIcons';
-import { columns } from '../../constants/dashboard';
 import { URL_PREFIX } from '../../constants/API';
 import MaterialTable from 'material-table';
 import React, { useEffect, useState } from 'react';
@@ -57,7 +56,36 @@ export default function Dataset({ setError, setSuccess, setLoading }) {
         data={dashboardData}
         title="Currency Exchange Rate"
         icons={icons}
-        columns={columns}
+        columns={[{
+          title: "Date",
+          field: "date",
+          type: "date",
+        },
+        {
+          title: "Currency Code",
+          field: "currency_code",
+        },
+    
+        {
+          title: "CPI (Prev Month)",
+          field: "cpi",
+        },
+        {
+          title: "GDP Growth Rate (Prev Year)",
+          field: "gdp",
+        },
+        {
+          title: "Interest Rate (Prev Year)",
+          field: "interest_rate",
+        },
+        {
+          title: "To MYR",
+          field: "to_myr",
+        },
+        {
+          title: "From MYR",
+          field: "from_myr",
+        }]}
         options={{
           filtering: true
         }}
