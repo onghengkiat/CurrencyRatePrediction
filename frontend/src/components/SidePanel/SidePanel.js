@@ -58,11 +58,11 @@ export default function SidePanel({ isOpened, setIsOpened, currencyList, setCurr
                 </Form.Group>
 
                 <Form.Group>
-                    <Form.Check type="checkbox" ref={ cpi_field } label="Include CPI"/>
+                    <Form.Check className="side-panel-checkbox" type="checkbox" ref={ cpi_field } label="Include CPI"/>
                 </Form.Group>
 
                 <Form.Group>
-                    <Form.Check type="checkbox" ref={ gdp_field } label="Include GDP"/>
+                    <Form.Check className="side-panel-checkbox" type="checkbox" ref={ gdp_field } label="Include GDP"/>
                 </Form.Group>
                 <div className="side-panel-button-container">
                     <Button type="submit" className="responsive side-panel-button">Apply Changes</Button>

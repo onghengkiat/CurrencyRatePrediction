@@ -65,6 +65,10 @@
     font-size: 30px;
 }
 
+.side-panel-checkbox input[type=checkbox] {
+    filter: invert(180%) hue-rotate(180deg) brightness(10);
+}
+
 .side-panel-button-container {
     display: flex;
     width: 80%;
