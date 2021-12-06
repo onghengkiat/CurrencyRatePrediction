@@ -1,4 +1,4 @@
-from app import app, df, scalers, currency_codes, malaysia_df
+from app import app, df, currency_codes, malaysia_df
 from flask import request, jsonify, send_file
 from app.util import missing_param_handler
 from constants import MODEL_SAVE_PATH, WINDOW_SIZE, MODEL_FILENAME, CURRENCY_TO_COUNTRY
@@ -257,8 +257,22 @@ def get_dashboard_timetrend():
 @cross_origin(origin='*')
 @missing_param_handler
 def get_actual_predicted_graph():
-    def _preprocess_data(_df, scaler, algorithm, include_cpi=False, include_gdp=False):
-        def _split_x_y(data, look_back, include_cpi=False, include_gdp=False):
+    def _preprocess_data(df, malaysia_df, algorithm, include_cpi=False, include_gdp=False, include_interest_rate=False):
+        def propagate_data_to_daily(_df, columns_to_be_interpolated):
+            prev = {}
+            for idx, row in _df.iterrows():
+                for col in columns_to_be_interpolated:
+                    if idx == 0:
+                        prev[col] = _df.at[0, col]
+                    elif _df.at[idx, col] == prev[col]:
+                        _df.at[idx, col] = None
+                    else:
+                        prev[col] = _df.at[idx, col]
+            temp_df = _df.set_index(_df['date'])
+            temp_df[['gdp', 'cpi', 'interest_rate']] = temp_df[['gdp', 'cpi','interest_rate']].resample('D').interpolate(method='linear')
+            return temp_df
+
+        def split_x_y(data, look_back, include_cpi=False, include_gdp=False, include_interest_rate=False):
             datax, datay = [],[]
             for i in range(len(data)-look_back):
                 datax.append(data[i:(i + look_back), 0])
@@ -266,21 +280,31 @@ def get_actual_predicted_graph():
                     datax[i] = np.append(datax[i], data[i + look_back, 1])
                 if include_gdp:
                     datax[i] = np.append(datax[i], data[i + look_back, 2])
-                datay.append(data[i + look_back, 0])
+                if include_interest_rate:
+                    datax[i] = np.append(datax[i], data[i + look_back, 3])
+                datay.append(data[i + look_back, 4])
             return np.array(datax), np.array(datay)
 
-        _df['gdp'] = malaysia_df['gdp'] - _df['gdp']
-        _df['cpi'] = malaysia_df['cpi'] - _df['cpi']
+        COLUMNS_TO_PROPAGATE = ['gdp', 'cpi', 'interest_rate']
+        _df = propagate_data_to_daily(df, COLUMNS_TO_PROPAGATE)
+        _malaysia_df = propagate_data_to_daily(malaysia_df, COLUMNS_TO_PROPAGATE)
 
-        _df[['from_myr']] = scaler.fit_transform(_df[['from_myr']])
-        _temp_scaler = MinMaxScaler()
-        _df[['cpi']] = _temp_scaler.fit_transform(_df[['cpi']])
-        _temp_scaler = MinMaxScaler()
-        _df[['gdp']] = _temp_scaler.fit_transform(_df[['gdp']])
+        COLUMNS_TO_CALCULATE_DIFFERENCE = ['gdp', 'cpi', 'interest_rate']
+        for col in COLUMNS_TO_CALCULATE_DIFFERENCE:
+            _df[col] = _malaysia_df[col] - _df[col]
 
-        _df = np.array(_df[['from_myr', 'cpi', 'gdp']]).reshape(-1, 3)
+        _df['target'] = _df['from_myr']
+        _df['from_myr'] = _df['from_myr'].diff().fillna(0)
 
-        x, y = _split_x_y(_df, WINDOW_SIZE, include_cpi=include_cpi, include_gdp=include_gdp)
+        COLUMNS_TO_SCALE = ['gdp', 'cpi', 'interest_rate']
+        from_myr_scaler = MinMaxScaler()
+        _df[['from_myr']] = from_myr_scaler.fit_transform(_df[['from_myr']])
+        for col in COLUMNS_TO_SCALE:
+            _df[[col]] = MinMaxScaler().fit_transform(_df[[col]])
+
+        _df = np.array(_df[['from_myr', 'cpi', 'gdp', 'interest_rate', 'target']]).reshape(-1, 5)
+
+        x, y = split_x_y(_df, WINDOW_SIZE, include_cpi=include_cpi, include_gdp=include_gdp, include_interest_rate=include_interest_rate)
 
         if algorithm == "LSTM":
             x = x.reshape(x.shape[0], x.shape[1], 1)
@@ -291,18 +315,19 @@ def get_actual_predicted_graph():
         _prev = x[-1]
 
         if algorithm == "POLYNOMIAL":   
-            poly = PolynomialFeatures(degree=WINDOW_SIZE + include_cpi + include_gdp, interaction_only=True)
+            poly = PolynomialFeatures(degree=2, interaction_only=True)
             x = poly.fit_transform(x)
 
         y = y.reshape(y.shape[0], 1)
-        return x, y, _prev
+        return x, y, _prev, from_myr_scaler
 
-    def _forecast_next_n_days(model, include_cpi, include_gdp, input_data, prev_data, n):
+    def _forecast_next_n_days(model, scaler, include_cpi, include_gdp, input_data, prev_data, last_y_value, n):
         results = []
         model_inputs = input_data
+        last_y = last_y_value
         if algorithm == "POLYNOMIAL":
             prev = prev_data
-            poly = PolynomialFeatures(degree=WINDOW_SIZE + include_cpi + include_gdp, interaction_only=True)
+            poly = PolynomialFeatures(degree=2, interaction_only=True)
 
         for _ in range(n):
             # Process the inputs
@@ -315,26 +340,31 @@ def get_actual_predicted_graph():
                 model_inputs = poly.fit_transform(prev)
             
             predicted_data = model.predict(model_inputs)
-
-            # Track it in the windows)
-
+            # Track it in the windows
             if algorithm == "POLYNOMIAL":
                 prev = prev[0]
-                prev = np.insert(prev, WINDOW_SIZE, predicted_data[0])
+                prev = np.insert(prev, WINDOW_SIZE, scaler.transform([[predicted_data[0] - last_y]])[0])
                 prev.reshape(prev.shape[0], 1)
                 prev = prev[1:]
-            else:
+            elif algorithm == "LSTM":
                 model_inputs = model_inputs[0]
-                model_inputs = np.insert(model_inputs, WINDOW_SIZE, predicted_data[0])
+                model_inputs = np.insert(model_inputs, WINDOW_SIZE, scaler.transform([[predicted_data[0][0] - last_y]])[0])
                 model_inputs.reshape(model_inputs.shape[0], 1)
                 model_inputs = model_inputs[1:]
+                last_y = predicted_data[0][0]
+            else:
+                model_inputs = model_inputs[0]
+                model_inputs = np.insert(model_inputs, WINDOW_SIZE, scaler.transform([[predicted_data[0] - last_y]])[0])
+                model_inputs.reshape(model_inputs.shape[0], 1)
+                model_inputs = model_inputs[1:]
+                last_y = predicted_data[0]
 
             results.append(predicted_data[0])
         results = np.array(results)
         results = results.reshape(results.shape[0], 1)
         return results
 
-    FORECAST_DAYS = 30
+    FORECAST_DAYS = 7
     try:
         currency_code = request.args.get('currency_code', None)
         algorithm = request.args.get('algorithm', 'LSTM')
@@ -356,38 +386,37 @@ def get_actual_predicted_graph():
             model = load_model(model_location)
         else:
             model = joblib.load(model_location)
-        scaler = scalers[currency_code]
+
+        _df = df[df['currency_code'] == currency_code].reset_index(drop=True)
 
         # Skip the first n, window size in which it can't make predictions on it
-        _df = df[df['currency_code'] == currency_code].reset_index(drop=True)
-        _df = _df[-90:]
         date = _df["date"].tolist()[WINDOW_SIZE:]
-        date = date[-90:]
-        markLineIndex = len(date) - 1
 
         # Data Preprocessing
-        x, y, prev_data = _preprocess_data(_df, scaler, algorithm, include_cpi=include_cpi, include_gdp=include_gdp)
+        x, y, prev_data, from_myr_scaler = _preprocess_data(_df, malaysia_df, algorithm, include_cpi=include_cpi, include_gdp=include_gdp)
+        x = x[-90:]
+        y = y[-90:]
+        date = date[-90:]
+
+        # To mark the beginning of forecast
+        markLineIndex = len(date) - 1
         y_pred = model.predict(x)
         y_pred = y_pred.reshape(y_pred.shape[0], 1)
 
         # Predict next n days currency rate
-        future_forecast = _forecast_next_n_days(model, include_cpi, include_gdp, x[-1], prev_data, FORECAST_DAYS)
+        future_forecast = _forecast_next_n_days(model, from_myr_scaler, include_cpi, include_gdp, x[-1], prev_data, y[-1][0], FORECAST_DAYS)
         y_pred = np.concatenate((y_pred, future_forecast))
-
-        # Transform back to the normal values
-        y_pred = scaler.inverse_transform(y_pred)
-        y_actual = scaler.inverse_transform(y)
 
         # Append date and data for actual for the 30 days forecast
         for _ in range(FORECAST_DAYS):
             date.append(date[-1] + timedelta(days=1))
             # Actual datapoints will be empty
-            y_actual = np.concatenate((y_actual, np.array([[None]])))
+            y = np.concatenate((y, np.array([[None]])))
 
         date = [d.strftime("%Y/%m/%d") for d in date]
         markLinePos = date[markLineIndex]
         data = {
-            "actual": (np.vstack((date, y_actual.flatten())).T).tolist(),
+            "actual": (np.vstack((date, y.flatten())).T).tolist(),
             "predicted": (np.vstack((date, y_pred.flatten())).T).tolist(),
             "markLinePos": markLinePos
         }

@@ -322,22 +322,8 @@ class ModelTrainer():
     _train = np.array(_train[['from_myr', 'cpi', 'gdp', 'interest_rate', 'target']]).reshape(-1, 5)
     _test = np.array(_test[['from_myr', 'cpi', 'gdp', 'interest_rate', 'target']]).reshape(-1, 5)
 
-    if self.algorithm == "XGBOOST":
-      if not self.include_cpi:
-        _test.drop('cpi', inplace=True, axis=1)
-        _train.drop('cpi', inplace=True, axis=1)
-
-      if not self.include_gdp:
-        _test.drop('gdp', inplace=True, axis=1)
-        _train.drop('gdp', inplace=True, axis=1)
-
-      _x_test = _test.drop('from_myr', axis=1).drop('target', axis=1)
-      _y_test = _test.target
-      _x_train = _train.drop('from_myr', axis=1).drop('target', axis=1)
-      _y_train = _train.target
-    else:
-      _x_test, _y_test = _split_x_y(_test, self.window_size, self.include_cpi, self.include_gdp, self.include_interest_rate)
-      _x_train, _y_train = _split_x_y(_train, self.window_size, self.include_cpi, self.include_gdp, self.include_interest_rate)
+    _x_test, _y_test = _split_x_y(_test, self.window_size, self.include_cpi, self.include_gdp, self.include_interest_rate)
+    _x_train, _y_train = _split_x_y(_train, self.window_size, self.include_cpi, self.include_gdp, self.include_interest_rate)
 
     if verbose:
       print("Done Extracting.")
@@ -488,11 +474,6 @@ class ModelTrainer():
 
       if verbose:
         print("Done Fitting.")
-        
-    elif self.algorithm == "XGBOOST":
-      data = xgb.DMatrix(x_train,label=y_train) 
-      #train the data
-      model = xgb.train({}, data)
 
     self.model = model
     
@@ -525,7 +506,7 @@ class ModelTrainer():
       if self.include_interest_rate:
         _index.append("Interest Rate")
 
-      if self.algorithm == "LSTM" or self.algorithm == "XGBOOST":
+      if self.algorithm == "LSTM":
         return
 
       total = sum(map(abs, self.model.coef_))
@@ -550,11 +531,10 @@ class ModelTrainer():
       print("Predicting on Test Set...")
 
     _x_test = x_test
+
     if self.algorithm == "POLYNOMIAL":
       poly = PolynomialFeatures(degree=2, interaction_only=True)
       _x_test = poly.fit_transform(x_test)
-    elif self.algorithm == "XGBOOST":
-      _x_test = xgb.DMatrix(x_test)
 
     _y_pred = self.model.predict(_x_test)
     _y_pred = np.array(_y_pred).reshape(-1, 1)
@@ -599,5 +579,3 @@ class ModelTrainer():
       print("Done Plotting.")
 
     return R2
-
-    

@@ -3,7 +3,7 @@ import Container from 'react-bootstrap/Container';
 import { URL_PREFIX } from '../../constants/API';
 
 import './Statistics.css';
-import SidePanel from './StatisticsComponents/SidePanel';
+import SidePanel from '../SidePanel/SidePanel';
 import ModelStatistics from './StatisticsComponents/ModelStatistics';
 import DatasetStatistics from './StatisticsComponents/DatasetStatistics';
 import { BACKEND_SERVER_ERROR } from '../../constants/error';
@@ -154,43 +154,43 @@ export default function Statistics({ setError, setLoading }){
       async function fetchData() {
         setLoading(true);
 
-        const response = await fetchModelPerformanceGraph(currencyCode, algorithm, includeCPI, includeGDP);
-        if (response.isError){
-          setError(response);
+        const modelPerformanceGraphResponse = await fetchModelPerformanceGraph(currencyCode, algorithm, includeCPI, includeGDP);
+        if (modelPerformanceGraphResponse.isError){
+          setError(modelPerformanceGraphResponse);
         } else {
-          const data = response;
+          const data = modelPerformanceGraphResponse;
           setPic(data);
         }
 
-        const response2 = await fetchCurrencyList();
-        if (response2.isError){
-          setError(response2);
+        const currencyListResponse = await fetchCurrencyList();
+        if (currencyListResponse.isError){
+          setError(currencyListResponse);
         } else {
-          const data = response2;
+          const data = currencyListResponse;
           setCurrencyList(data);
         }
 
-        const response3 = await fetchStatistics(currencyCode);
-        if (response3.isError){
-          setError(response3);
+        const statisticsResponse = await fetchStatistics(currencyCode);
+        if (statisticsResponse.isError){
+          setError(statisticsResponse);
         } else {
-          const data = response3;
+          const data = statisticsResponse;
           setStatistics(data);
         }
 
-        const response5 = await fetchModelPerformance(currencyCode, algorithm, includeCPI, includeGDP);
-        if (response5.isError){
-          setError(response5);
+        const modelPerformanceResponse = await fetchModelPerformance(currencyCode, algorithm, includeCPI, includeGDP);
+        if (modelPerformanceResponse.isError){
+          setError(modelPerformanceResponse);
         } else {
-          const data = response5;
+          const data = modelPerformanceResponse;
           setModelPerformance(data);
         }
 
-        const response6 = await fetchAlgorithmList();
-        if (response6.isError){
-          setError(response6);
+        const algorithmListResponse = await fetchAlgorithmList();
+        if (algorithmListResponse.isError){
+          setError(algorithmListResponse);
         } else {
-          const data = response6;
+          const data = algorithmListResponse;
           setAlgorithmList(data);
         }
 

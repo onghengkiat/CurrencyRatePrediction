@@ -5,7 +5,7 @@ import Col from 'react-bootstrap/Col';
 import { URL_PREFIX } from '../../constants/API';
 
 import './Dashboard.css';
-import SidePanel from './DashboardComponents/SidePanel';
+import SidePanel from '../SidePanel/SidePanel';
 import CurrencyDetail from './DashboardComponents/CurrencyDetail';
 import TimeTrend from './DashboardComponents/TimeTrend';
 import PredActual from './DashboardComponents/PredActual';
@@ -37,6 +37,31 @@ async function fetchCurrencyList() {
     })
 }
 
+async function fetchAlgorithmList() {
+  return fetch(`${URL_PREFIX}algorithmlist`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => {
+    if (response.ok) {
+      return response.json();
+    }
+    throw response;
+  })
+  .then(data => data.data)
+  .catch(response => { 
+    // case when backend server is working, and sent frontend the error message
+    if (response.isError) {
+      return response.json();
+    } else {
+      // case when backend server is not working fine and didn't send any useful info to frontend
+      return BACKEND_SERVER_ERROR;
+    }
+  })
+}
+
 async function fetchDashboardTimetrend(currency_code) {
   return fetch(`${URL_PREFIX}dashboard/timetrend?currency_code=${currency_code}`, {
     method: 'GET',
@@ -62,8 +87,8 @@ async function fetchDashboardTimetrend(currency_code) {
   })
 }
 
-async function fetchDashboardActualPred(currency_code) {
-  return fetch(`${URL_PREFIX}dashboard/actualpred?currency_code=${currency_code}`, {
+async function fetchDashboardActualPred(currency_code, algorithm, include_cpi, include_gdp) {
+  return fetch(`${URL_PREFIX}dashboard/actualpred?currency_code=${currency_code}&algorithm=${algorithm}&include_cpi=${include_cpi}&include_gdp=${include_gdp}`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json'
@@ -141,6 +166,10 @@ export default function Dashboard({ setError, setLoading }){
 
     const [currencyCode, setCurrencyCode] = useState("USD");
     const [currencyList, setCurrencyList] = useState(["USD"]);
+    const [algorithm, setAlgorithm] = useState("LSTM");
+    const [algorithmList, setAlgorithmList] = useState(["LSTM"]);
+    const [includeCPI, setCPI] = useState(false);
+    const [includeGDP, setGDP] = useState(false);
     const [timeTrendData, setTimeTrendData] = useState(null);
     const [predActualData, setPredActualData] = useState(null);
     const [currencyDetailData, setCurrencyDetailData] = useState(null);
@@ -154,60 +183,70 @@ export default function Dashboard({ setError, setLoading }){
       async function fetchData() {
         setLoading(true);
 
-        const response = await fetchCurrencyList();
-        if (response.isError){
-          setError(response);
+        const currencyListResponse = await fetchCurrencyList();
+        if (currencyListResponse.isError){
+          setError(currencyListResponse);
         } else {
-          const data = response;
+          const data = currencyListResponse;
           setCurrencyList(data);
         }
+
+        const algorithmListResponse = await fetchAlgorithmList();
+        if (algorithmListResponse.isError){
+          setError(algorithmListResponse);
+        } else {
+          const data = algorithmListResponse;
+          setAlgorithmList(data);
+        }
         
-        const response2 = await fetchDashboardTimetrend(currencyCode);
-        if (response2.isError){
-          setError(response2);
+        const dashboardTimeTrendResponse = await fetchDashboardTimetrend(currencyCode);
+        if (dashboardTimeTrendResponse.isError){
+          setError(dashboardTimeTrendResponse);
           setTimeTrendData(null);
         } else {
-          const data = response2;
+          const data = dashboardTimeTrendResponse;
           setTimeTrendData(data);
         }
 
-        const response3 = await fetchDashboardActualPred(currencyCode);
-        if (response3.isError){
-          setError(response3);
+        const dashboardActualPredResponse = await fetchDashboardActualPred(currencyCode, algorithm, includeCPI, includeGDP);
+        if (dashboardActualPredResponse.isError){
+          setError(dashboardActualPredResponse);
           setPredActualData(null);
         } else {
-          const data = response3;
+          const data = dashboardActualPredResponse;
           setPredActualData(data);
         }
 
-        const response4 = await fetchDashboardCurrencyDetail(currencyCode);
-        if (response4.isError){
-          setError(response4);
+        const dashboardCurrencyDetailResponse = await fetchDashboardCurrencyDetail(currencyCode);
+        if (dashboardCurrencyDetailResponse.isError){
+          setError(dashboardCurrencyDetailResponse);
           setCurrencyDetailData(null);
         } else {
-          const data = response4;
+          const data = dashboardCurrencyDetailResponse;
           setCurrencyDetailData(data);
         }
 
-        const response5 = await fetchRateConversion(currencyCode);
-        if (response5.isError){
-          setError(response5);
+        const rateConversionResponse = await fetchRateConversion(currencyCode);
+        if (rateConversionResponse.isError){
+          setError(rateConversionResponse);
           setRateConversionData(null);
         } else {
-          const data = response5;
+          const data = rateConversionResponse;
           setRateConversionData(data);
         }
 
         setLoading(false);
       }
       fetchData();
-    }, [currencyCode]);
+    }, [currencyCode, algorithm, includeCPI, includeGDP]);
     
   const rightContentClassname = sidePanelIsOpened ? "right-content open" : "right-content";
 
   return (
       <Container id="dashboard-container" fluid>
-        <SidePanel isOpened={ sidePanelIsOpened } setIsOpened={ setSidePanelIsOpened } currencyList={ currencyList } setCurrencyCode={ setCurrencyCode }/>
+        
+        <SidePanel isOpened={ sidePanelIsOpened } setIsOpened={ setSidePanelIsOpened } currencyList={ currencyList } setCurrencyCode={ setCurrencyCode } algorithmList={ algorithmList } setAlgorithm={ setAlgorithm } setCPI={ setCPI } setGDP={ setGDP }/>
+
         <div className={rightContentClassname}>
             <Row md={2} xs={1} className="dashboard-row">
               <Col md={4} className="dashboard-chart-outer-container">

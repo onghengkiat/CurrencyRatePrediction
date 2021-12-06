@@ -1,0 +1,87 @@
+.side-panel {
+    position: fixed;
+    width: 330px;
+    height: 100%;
+    left: -300px;
+    transition: 0.5s;
+}
+
+.side-panel-toggle {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100%;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background-color: #707070;
+    color: white;
+    transition: 0.5s;
+    
+    cursor: pointer;
+}
+
+.side-panel-toggle-icon {
+    font-size: 40px;
+}
+
+.side-panel-form {
+    position: relative;
+    left: 0px;
+    padding: 0px 20px;
+    width: 300px;
+    height: 100%;
+
+    background-color: #707070;
+    color: white;
+
+    border-color: grey;
+    border-right-style: solid;
+    border-right-width: 3px;
+
+    font-family:'Netflix Sans';
+}
+
+.side-panel.open {
+    left: 0px;
+}
+
+.side-panel-toggle.open {
+    left: 300px;
+}
+
+.side-panel-title-container {
+    margin: 0px -20px 10px -20px;
+    text-align: center;
+    height: 50px;
+}
+
+.side-panel-title {
+    padding-top: 10px;
+    color: white;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 30px;
+}
+
+.side-panel-button-container {
+    display: flex;
+    width: 80%;
+    justify-content: center;
+}
+
+.side-panel-button {
+    position: relative;
+    background-color: #494c4e !important;
+    border-radius: 10px !important;
+    border-style: None !important;
+}
+
+.side-panel-button:active, .side-panel-button:focus { 
+    box-shadow: None !important;
+}
+
+.side-panel-button:active {
+    top: 1px;
+}
