@@ -229,6 +229,7 @@ def get_dashboard_rateconversion():
             "to_myr": latest_data["to_myr"],
             "myr_to_others": myr_to_others
         }
+        print(data)
         return jsonify({"message": "Successful", "data": data}), 200
     except Exception as e:
         print(e)

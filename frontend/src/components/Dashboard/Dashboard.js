@@ -264,7 +264,7 @@ export default function Dashboard({ setError, setLoading }){
               </Col>
 
               <Col md={4} className="dashboard-chart-outer-container">
-                <RateConversionPanel data={ rateConversionData }chartTitle="Rate Conversion" />
+                <RateConversionPanel data={ rateConversionData } chartTitle="Rate Conversion" currencyCode={ currencyCode }/>
               </Col>
             </Row>
         </div>

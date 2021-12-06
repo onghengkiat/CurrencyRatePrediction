@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import Form from "react-bootstrap/Form";
 import ErrorComponent from './ErrorComponent';
 import Button from 'react-bootstrap/Button';
@@ -6,11 +6,15 @@ import Card from 'react-bootstrap/Card';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 
-export default function RateConversionPanel({ data, chartTitle }){
+export default function RateConversionPanel({ data, chartTitle, currencyCode }){
   const from_currency_value_field = useRef(null);
   const to_currency_code_field = useRef(null);
 
   const [toValue, setToValue] = useState(null);
+
+  useEffect( () => {
+    setToValue('');
+  }, [currencyCode])
 
   if (data) {
   } else {
@@ -51,7 +55,7 @@ export default function RateConversionPanel({ data, chartTitle }){
               </Col>
               <Col>
                 <Form.Control as="select" disabled custom>
-                  <option>USD</option>
+                  <option>{currencyCode}</option>
                 </Form.Control>
               </Col>
             </Row>
