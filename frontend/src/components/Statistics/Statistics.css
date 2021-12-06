@@ -20,7 +20,7 @@
     justify-content: center;
     align-items: center;
 
-    background-color: #343a40;
+    background-color: #707070;
     color: white;
     transition: 0.5s;
     
@@ -37,12 +37,15 @@
     padding: 0px 20px;
     width: 300px;
     height: 100%;
-    background-color: #343a40;
+
+    background-color: #707070;
     color: white;
 
-    border-right-color: grey;
-    border-right-width: 1px;
-    border-right-style: solid; 
+    border-color: grey;
+    border-right-style: solid;
+    border-right-width: 3px;
+
+    font-family:'Netflix Sans';
 }
 
 .side-panel.open {
@@ -54,20 +57,37 @@
 }
 
 .side-panel-title-container {
-    background: grey;
     margin: 0px -20px 10px -20px;
     text-align: center;
     height: 50px;
 }
 
 .side-panel-title {
+    padding-top: 10px;
     color: white;
+    font-family: "Times New Roman", Times, serif;
     font-size: 30px;
 }
 
+.side-panel-button-container {
+    display: flex;
+    width: 80%;
+    justify-content: center;
+}
+
 .side-panel-button {
-    width: 150px;
+    position: relative;
+    background-color: #494c4e !important;
     border-radius: 10px !important;
+    border-style: None !important;
+}
+
+.side-panel-button:active, .side-panel-button:focus { 
+    box-shadow: None !important;
+}
+
+.side-panel-button:active {
+    top: 1px;
 }
 
 .right-content {

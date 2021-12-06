@@ -80,7 +80,7 @@ export default function TimeTrend({ data, chartTitle }){
           show: false,
         },
         axisLabel: {
-          formatter: '{value}'
+          formatter: '{value} %'
         }
       },
       {
@@ -99,7 +99,7 @@ export default function TimeTrend({ data, chartTitle }){
           show: false,
         },
         axisLabel: {
-          formatter: '{value} %'
+          formatter: '{value}'
         }
       },
     ],
@@ -114,14 +114,14 @@ export default function TimeTrend({ data, chartTitle }){
             type: "line",
             showSymbol: false,
             yAxisIndex: 1,
-            data: data.cpi,
+            data: data.gdp,
         },
         {
             name: legends[2],
             type: "line",
             showSymbol: false,
             yAxisIndex: 2,
-            data: data.gdp,
+            data: data.cpi,
         }
     ]
   };

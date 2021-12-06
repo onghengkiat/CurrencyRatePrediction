@@ -157,7 +157,6 @@ export default function Dashboard({ setError, setLoading }){
         const response = await fetchCurrencyList();
         if (response.isError){
           setError(response);
-          setCurrencyList(null);
         } else {
           const data = response;
           setCurrencyList(data);

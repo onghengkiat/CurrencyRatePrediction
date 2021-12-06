@@ -28,7 +28,7 @@ export default function SidePanel({ isOpened, setIsOpened, currencyList, setCurr
         <div className={sidePanelClassname}>
             <Form className="side-panel-form" role="form" onSubmit={handleSubmit}>
                 <div className="side-panel-title-container">
-                    <div className="side-panel-title">Control Panel</div>
+                    <div className="side-panel-title">CONTROL PANEL</div>
                 </div>
                 <Form.Group>
                     <Form.Label>Select Currency Code : </Form.Label>
@@ -63,7 +63,9 @@ export default function SidePanel({ isOpened, setIsOpened, currencyList, setCurr
                 <Form.Group>
                     <Form.Check type="checkbox" ref={ gdp_field } label="Include GDP"/>
                 </Form.Group>
-                <Button type="submit" className="responsive side-panel-button">Apply Changes</Button>
+                <div className="side-panel-button-container">
+                    <Button type="submit" className="responsive side-panel-button">Apply Changes</Button>
+                </div>
             </Form>
             <div className={sidePanelToggleClassname} onClick={toggleSidePanel}>
                 { isOpened? <MdOutlineArrowLeft className="side-panel-toggle-icon"/>:<MdOutlineArrowRight className="side-panel-toggle-icon"/>}
