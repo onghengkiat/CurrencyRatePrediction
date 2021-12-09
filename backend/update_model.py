@@ -5,7 +5,7 @@ import pandas as pd
 import itertools
 from constants import MODEL_WITH_CPI, MODEL_WITH_GDP, MODEL_WITH_GDP_AND_CPI, MODEL_ONLY_RATE
 
-# scraper = WebScraper(CURRENCY_EXCHANGE_RATE_LINK, CPI_LINK, CPI_FILENAME, GDP_LINK, INTEREST_RATE_LINK, DOWNLOAD_DIR, duration=10)
+# scraper = WebScraper(CURRENCY_EXCHANGE_RATE_LINK, CPI_LINK, CPI_FILENAME, GDP_LINK, INTEREST_RATE_LINK, DOWNLOAD_DIR, duration=3)
 # df = scraper.get_df()
 # df.to_csv(DATA_FILENAME)
 df = pd.read_csv(DATA_FILENAME, index_col=0)
@@ -26,7 +26,7 @@ for currency_code in currency_codes:
     modelTrainer = ModelTrainer(currency_code, MODEL_FILENAME, MODEL_SAVE_PATH,
             MODEL_WITH_CPI, MODEL_WITH_GDP, MODEL_WITH_GDP_AND_CPI, MODEL_ONLY_RATE,
             num_of_neuron=30, num_of_iteration=30, alpha=0.001, dropout=0.1,
-            test_n_months=12, compute_difference=True, predict_change=False)
+            test_n_months=6, compute_difference=True, predict_change=False, adjust_y_intercept=True)
     modelTrainer.set_window_size(WINDOW_SIZE)
 
     for algorithm in ModelTrainer.ALGORITHMS_AVAILABLE:    

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler, PolynomialFeatures
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 import math
-from datetime import datetime
+from datetime import datetime, timedelta, date
 from keras.models import Sequential
 from keras.layers import Dense, LSTM, Dropout
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
@@ -22,11 +22,12 @@ class ModelTrainer():
   def __init__(self, currency_code, model_filename, model_save_path, 
                model_with_cpi, model_with_gdp, model_with_gdp_and_cpi, model_only_rate,
                algorithm="LSTM",  window_size=3, include_cpi=False, include_gdp=False, include_interest_rate=False, 
-               num_of_neuron=100, num_of_iteration=10, dropout=0, alpha=0, test_n_months=12,
-               compute_difference=True, predict_change=False, same_scale=False):
+               num_of_neuron=100, num_of_iteration=10, dropout=0, alpha=0, test_n_months=6,
+               compute_difference=True, predict_change=False, same_scale=False, adjust_y_intercept=False):
     self.COLUMNS_TO_PROPAGATE = ['gdp', 'cpi', 'interest_rate']
     self.COLUMNS_TO_CALCULATE_DIFFERENCE = ['gdp', 'cpi', 'interest_rate']
     self.same_scale = same_scale
+    self.adjust_y_intercept = adjust_y_intercept
 
     self.currency_code = currency_code
     self.scaler = None
@@ -223,6 +224,11 @@ class ModelTrainer():
       now = datetime.now()
       month = int(now.strftime("%m")) - last_n_months
       year = int(now.strftime("%Y"))
+      if month == 12:
+        day = (date(year + 1, 1, 1) - timedelta(days=1)).day
+      else:
+        day = (date(year, month + 1, 1) - timedelta(days=1)).day
+
       while month <= 0:
         month = month + 12
         year = year - 1
@@ -232,7 +238,7 @@ class ModelTrainer():
         test_start_month = 1
         test_start_year = year + 1
         
-      return data[:f"{year}-{month}-31"], data[f"{test_start_year}-{test_start_month}-01":]
+      return data[:f"{year}-{month}-{day}"], data[f"{test_start_year}-{test_start_month}-01":]
 
     def _split_x_y(data, look_back, include_cpi=False, include_gdp=False, include_interest_rate=False):
       datax, datay = [],[]
@@ -257,7 +263,7 @@ class ModelTrainer():
     if verbose:
       print("Propagating yearly and monthly data to daily...")
     
-    _df = df
+    _df = df[['from_myr', 'cpi', 'gdp', 'interest_rate', 'date']]
     _df = propagate_data_to_daily(_df, self.COLUMNS_TO_PROPAGATE)
     _malaysia_df = propagate_data_to_daily(malaysia_df, self.COLUMNS_TO_PROPAGATE)
 
@@ -292,11 +298,12 @@ class ModelTrainer():
     if verbose:
       print("Performing Min Max Scaling...")
 
-    self.scaler = MinMaxScaler()
-    _df[['from_myr']] = self.scaler.fit_transform(_df[['from_myr']])
-    _df[['cpi']] = MinMaxScaler().fit_transform(_df[['cpi']])
-    _df[['gdp']] = MinMaxScaler().fit_transform(_df[['gdp']])
-    _df[['interest_rate']] = MinMaxScaler().fit_transform(_df[['interest_rate']])
+    _df[['from_myr']] = MinMaxScaler(feature_range=(-1, 1)).fit_transform(_df[['from_myr']])
+    _df[['cpi']] = MinMaxScaler(feature_range=(-1, 1)).fit_transform(_df[['cpi']])
+    _df[['gdp']] = _df[['gdp']]/100
+    _df[['interest_rate']] = _df[['interest_rate']]/100
+    # _df[['gdp']] = MinMaxScaler(feature_range=(-1, 1)).fit_transform(_df[['gdp']])
+    # _df[['interest_rate']] = MinMaxScaler(feature_range=(-1, 1)).fit_transform(_df[['interest_rate']])
     
     if verbose:
       print("Done Scaling.")
@@ -392,7 +399,7 @@ class ModelTrainer():
 
     elif self.algorithm == "LINEAR":
       
-      model = LinearRegression()
+      model = LinearRegression(fit_intercept=True)
 
       ###
       ### Fit Model to Dataset
@@ -481,8 +488,8 @@ class ModelTrainer():
     def _plot_actual_predict_graph(y_test, y_pred, currency_code, window_size):
       max_bound = max(y_test)
       min_bound = min(y_test)
-      max_bound = max_bound + 0.05*max_bound
-      min_bound = min_bound - 0.05*min_bound
+      max_bound = max_bound + 0.01*max_bound
+      min_bound = min_bound - 0.01*min_bound
       plt.figure(figsize=(15, 10))
       plt.subplot(2, 1, 1)
       if self.same_scale:
@@ -539,6 +546,11 @@ class ModelTrainer():
     _y_pred = self.model.predict(_x_test)
     _y_pred = np.array(_y_pred).reshape(-1, 1)
     _y_test = np.array(y_test).reshape(-1, 1)
+
+    if self.adjust_y_intercept and (self.algorithm == "LINEAR" or self.algorithm == "RIDGE"):
+      self.model.intercept_ = self.model.intercept_ - np.mean(_y_pred - _y_test)
+      _y_pred = self.model.predict(_x_test)
+      _y_pred = np.array(_y_pred).reshape(-1, 1)
 
     if last is not None and self.predict_change:
       _prev_pred = last
