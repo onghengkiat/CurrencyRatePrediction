@@ -297,12 +297,11 @@ def get_actual_predicted_graph():
         _df['target'] = _df['from_myr']
         _df['from_myr'] = _df['from_myr'].diff().fillna(0)
 
-        COLUMNS_TO_SCALE = ['gdp', 'cpi', 'interest_rate']
-        from_myr_scaler = MinMaxScaler()
+        from_myr_scaler = MinMaxScaler(feature_range=(-1, 1))
         _df[['from_myr']] = from_myr_scaler.fit_transform(_df[['from_myr']])
-        for col in COLUMNS_TO_SCALE:
-            _df[[col]] = MinMaxScaler().fit_transform(_df[[col]])
-
+        _df[['cpi']] = MinMaxScaler(feature_range=(-1, 1)).fit_transform(_df[['cpi']])
+        _df[['gdp']] = _df[['gdp']]/100
+        _df[['interest_rate']] = _df[['interest_rate']]/100
         _df = np.array(_df[['from_myr', 'cpi', 'gdp', 'interest_rate', 'target']]).reshape(-1, 5)
 
         x, y = split_x_y(_df, WINDOW_SIZE, include_cpi=include_cpi, include_gdp=include_gdp, include_interest_rate=include_interest_rate)
@@ -322,7 +321,7 @@ def get_actual_predicted_graph():
         y = y.reshape(y.shape[0], 1)
         return x, y, _prev, from_myr_scaler
 
-    def _forecast_next_n_days(model, scaler, include_cpi, include_gdp, input_data, prev_data, last_y_value, n):
+    def _forecast_next_n_days(model, scaler, input_data, prev_data, last_y_value, n):
         results = []
         model_inputs = input_data
         last_y = last_y_value
@@ -405,7 +404,7 @@ def get_actual_predicted_graph():
         y_pred = y_pred.reshape(y_pred.shape[0], 1)
 
         # Predict next n days currency rate
-        future_forecast = _forecast_next_n_days(model, from_myr_scaler, include_cpi, include_gdp, x[-1], prev_data, y[-1][0], FORECAST_DAYS)
+        future_forecast = _forecast_next_n_days(model, from_myr_scaler, x[-1], prev_data, y[-1][0], FORECAST_DAYS)
         y_pred = np.concatenate((y_pred, future_forecast))
 
         # Append date and data for actual for the 30 days forecast
