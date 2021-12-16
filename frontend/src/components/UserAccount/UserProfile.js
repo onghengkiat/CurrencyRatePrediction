@@ -178,10 +178,10 @@ export default function UserProfile({ token, setError, editing=false, setSuccess
                         </Row>
                         :
                         <Row>
-                            <Col sm={2} className="user-profile-button">
+                            <Col xl={1} sm={2} className="user-profile-button">
                                 <Button variant="info" href="/profile/edit">Edit</Button>
                             </Col>
-                            <Col sm={10} className="user-profile-button">
+                            <Col xl={11} sm={10} className="user-profile-button">
                                 <Button variant="info" href="/password">Change Password</Button>
                             </Col>
                         </Row>

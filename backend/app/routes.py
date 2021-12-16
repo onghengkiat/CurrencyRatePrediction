@@ -145,15 +145,12 @@ def user_route():
         which matches the username. If id is None, it will return the 
         list of users.
         """
-        print(321)
         if id is None:
-            print(123)
             data = []
             for value in USERS.values():
                 data.append(value)
         else:
             data = USERS.get(id, {})
-        print(data)
         return data
     try:
         if request.method == 'GET':
