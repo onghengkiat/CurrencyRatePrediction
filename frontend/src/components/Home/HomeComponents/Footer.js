@@ -45,12 +45,12 @@ export default function Footer(){
               3. Yearly GDP Growth for each of the countries by World Bank
             </a>
           </Row>
-          <br/>
+          {/* <br/>
           <Row>
             <a href="https://api.worldbank.org/v2/en/indicator/FR.INR.RINR?downloadformat=excel">
               4. Yearly Interest Rate for each of the countries by World Bank
             </a>
-          </Row>
+          </Row> */}
         </Col>
 
         <Col className="footer-col">

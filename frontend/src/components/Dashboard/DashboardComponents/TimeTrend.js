@@ -17,7 +17,7 @@ export default function TimeTrend({ data, chartTitle }){
   }
 
   const colors = ['blue', 'green', 'red'];
-  const legends = ["Interest Rate", "GDP Growth Rate", "CPI"]
+  const legends = ["From MYR", "GDP Growth Rate", "CPI"]
   
   const option = {
     color: colors,
@@ -62,7 +62,7 @@ export default function TimeTrend({ data, chartTitle }){
           show: false,
         },
         axisLabel: {
-          formatter: '{value} %'
+          formatter: '{value}'
         }
       },
       {
@@ -107,7 +107,7 @@ export default function TimeTrend({ data, chartTitle }){
             name: legends[0],
             type: "line",
             showSymbol: false,
-            data: data.interest_rate,
+            data: data.from_myr,
         },
         {
             name: legends[1],

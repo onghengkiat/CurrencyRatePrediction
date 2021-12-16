@@ -74,10 +74,10 @@ export default function Dataset({ setError, setSuccess, setLoading }) {
           title: "GDP Growth Rate (Prev Year)",
           field: "gdp",
         },
-        {
-          title: "Interest Rate (Prev Year)",
-          field: "interest_rate",
-        },
+        // {
+        //   title: "Interest Rate (Prev Year)",
+        //   field: "interest_rate",
+        // },
         {
           title: "To MYR",
           field: "to_myr",

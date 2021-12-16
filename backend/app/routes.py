@@ -247,7 +247,8 @@ def get_dashboard_timetrend():
         data = {
             "gdp": _df[["date", "gdp"]].values.tolist(),
             "cpi": _df[["date", "cpi"]].values.tolist(),
-            "interest_rate": _df[["date", "interest_rate"]].values.tolist()
+            "interest_rate": _df[["date", "interest_rate"]].values.tolist(),
+            "from_myr": _df[["date", "from_myr"]].values.tolist()
         }
         return jsonify({"message": "Successful", "data": data}), 200
     except Exception as e:
