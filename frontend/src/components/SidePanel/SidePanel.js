@@ -4,7 +4,7 @@ import Button from 'react-bootstrap/Button';
 import { MdOutlineArrowLeft, MdOutlineArrowRight } from 'react-icons/md';
 import './SidePanel.css'
 
-export default function SidePanel({ isOpened, setIsOpened, currencyList, setCurrencyCode, algorithmList, setAlgorithm, setCPI, setGDP }){
+export default function SidePanel({ token, isOpened, setIsOpened, currencyList, setCurrencyCode, algorithmList, setAlgorithm, setCPI, setGDP }){
     const currency_code_field = useRef(null);
     const algorithm_field = useRef(null);
     const cpi_field = useRef(null);
@@ -16,9 +16,11 @@ export default function SidePanel({ isOpened, setIsOpened, currencyList, setCurr
     const handleSubmit = async e => {
         e.preventDefault();
         setCurrencyCode(currency_code_field.current.value);
-        setAlgorithm(algorithm_field.current.value);
-        setCPI(cpi_field.current.checked);
-        setGDP(gdp_field.current.checked);
+        if (token.role === "admin" || token.role === "developer"){
+            setAlgorithm(algorithm_field.current.value);
+            setCPI(cpi_field.current.checked);
+            setGDP(gdp_field.current.checked);
+        }
     }
 
     const toggleSidePanel = e => {
@@ -37,33 +39,37 @@ export default function SidePanel({ isOpened, setIsOpened, currencyList, setCurr
                         {
                             currencyList.map((value, _) => {
                                 return (  
-                                    <option value={value}>{value}</option>
+                                    value === "USD" ? <option selected value={value}>{value}</option>: <option value={value}>{value}</option>
                                 )
                             })
                         }
                     </Form.Control>
                 </Form.Group>
                 
+                { (token.role === "admin" || token.role === "developer") &&
                 <Form.Group>
                     <Form.Label>Select Algorithm : </Form.Label>
                     <Form.Control as="select" ref={ algorithm_field } custom>
                         {
                             algorithmList.map((value, _) => {
                                 return (  
-                                    <option value={value}>{value}</option>
+                                    value === "LINEAR" ? <option selected value={value}>{value}</option>: <option value={value}>{value}</option>
                                 )
                             })
                         }
                     </Form.Control>
-                </Form.Group>
+                </Form.Group>}
 
+                { (token.role === "admin" || token.role === "developer") &&
                 <Form.Group>
                     <Form.Check className="side-panel-checkbox" type="checkbox" ref={ cpi_field } label="Include CPI"/>
-                </Form.Group>
+                </Form.Group>}  
 
+                { (token.role === "admin" || token.role === "developer") &&
                 <Form.Group>
                     <Form.Check className="side-panel-checkbox" type="checkbox" ref={ gdp_field } label="Include GDP"/>
-                </Form.Group>
+                </Form.Group>}
+
                 <div className="side-panel-button-container">
                     <Button type="submit" className="responsive side-panel-button">Apply Changes</Button>
                 </div>

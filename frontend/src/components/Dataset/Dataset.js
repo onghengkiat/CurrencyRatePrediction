@@ -21,7 +21,7 @@ async function fetchDashboardData() {
     .then(data => data.data)
     .catch(response => { 
       // case when backend server is working, and sent frontend the error message
-      if (response.isError) {
+      if (response.status) {
         return response.json();
       } else {
         // case when backend server is not working fine and didn't send any useful info to frontend

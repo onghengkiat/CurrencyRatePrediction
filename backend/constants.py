@@ -44,3 +44,35 @@ CURRENCY_TO_COUNTRY = {
     "EGP": "Egypt, Arab Rep.",
     "MYR": "Malaysia",
 }
+
+USERS = {
+    "admin": {
+        "username": "admin",
+        "password": "admin",
+        "fullname": "Admin",
+        "role": "admin",
+        "email": "admin@gmail.com",
+    },
+    "developer": {
+        "username": "developer",
+        "password": "developer",
+        "fullname": "Developer",
+        "role": "developer",
+        "email": "developer@gmail.com",
+    },
+    "viewer": {
+        "username": "viewer",
+        "password": "viewer",
+        "fullname": "Viewer",
+        "role": "viewer",
+        "email": "viewer@gmail.com",
+    }
+}
+
+ACCESS_DENIED_ERROR = {
+    "isError": True, 
+    "code": "Access Denied", 
+    "message": "You do not have permission to visit this page."
+}
+
+SECRET_KEY = 'hfdjksasdjnrnmq'

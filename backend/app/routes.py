@@ -1,9 +1,9 @@
 from app import app, df, currency_codes, malaysia_df
-from flask import request, jsonify, send_file
+from flask import request, jsonify, send_file, make_response
 from app.util import missing_param_handler
-from constants import MODEL_SAVE_PATH, WINDOW_SIZE, MODEL_FILENAME, CURRENCY_TO_COUNTRY
+from constants import MODEL_SAVE_PATH, WINDOW_SIZE, MODEL_FILENAME, CURRENCY_TO_COUNTRY, USERS, ACCESS_DENIED_ERROR
 from operator import itemgetter
-from datetime import timedelta
+from datetime import timedelta, datetime
 import os
 from flask_cors import cross_origin
 import pandas as pd
@@ -13,10 +13,224 @@ from modeltrainer import ModelTrainer
 from sklearn.preprocessing import MinMaxScaler, PolynomialFeatures
 import joblib
 from constants import MODEL_WITH_CPI, MODEL_WITH_GDP, MODEL_WITH_GDP_AND_CPI, MODEL_ONLY_RATE
+import jwt
 
 #######
 # API #
 #######
+@app.route("/authenticate", methods=['POST'])
+@cross_origin(origin='*')
+@missing_param_handler
+def auth_route():
+    """
+    Parameters (json)
+    -----------------
+    JSON that contains the username and password
+    entered by the user
+
+        Format of the JSON
+        ------------------
+        {
+            username: <username>,
+            password: <password>
+        }
+
+    Return
+    ------
+    Authentication successful
+        resp: JSON
+            Response that contains the token for the user
+            The JSON also contains the jwt token in 
+            the cookie for the frontend to communicate
+            with backends API
+
+            Format of the resp
+            ------------------
+            {
+                role: <role>,
+                username: <username>
+            }
+        
+    Methods Allowed
+    ---------------
+    POST
+        Authenticate the username and password entered
+        by the user
+    """
+    if request.json is not None and 'username' in request.json and 'password' in request.json:
+        username, password = request.json["username"], request.json["password"]
+        user = USERS.get(username, None)
+
+        if user is None:
+            return jsonify({"isError": True, "code": "Non-existing User", "message": "There is no existing user which matches the username."}), 400
+
+        if user["password"] == password:
+            token = jwt.encode({
+                "role": user["role"],
+                "sub": username,
+                "iat": datetime.utcnow()
+            }, app.config['SECRET_KEY'])
+            resp = make_response(jsonify({"role": user["role"], "username": username}), 200)
+
+            expire_date = datetime.now()
+            expire_date = expire_date + timedelta(hours=24)
+            resp.set_cookie('jwt', token.decode('utf-8'), httponly=True, secure=False, domain='127.0.0.1:3000', samesite='None', expires=expire_date)
+            return resp
+    return jsonify({"isError": True, "code": "Invalid Credential", "message": "Wrong username or password."}), 403
+
+@app.route("/user", methods=['GET', 'POST', 'DELETE', 'PUT'])
+@cross_origin(origin='*')
+@missing_param_handler
+def user_route():
+    """
+    Arguments (query string)
+    ------------------------
+    id (optional): string
+        The username
+    
+    Methods Allowed
+    ---------------
+    GET (with id)
+        Return json contains only the details of the user 
+        which matches the id. If id is none, it will return the list 
+        of users.
+
+    PUT
+        Update the details of an user into the table 
+        according to the JSON data received
+    
+    POST
+        Insert a new user into the table according to the 
+        JSON data received
+    
+    DELETE
+        Delete an user from the table according to the 
+        JSON data received
+    """
+    
+    def get_user(id):
+        """
+        Parameters
+        ----------
+        id: string
+            The username
+
+        Return
+        ------
+        data: dictionary
+            Details of the user which matches the username
+
+            Format of the data
+            ------------------
+            {
+                username: <username>,
+                fullname: <fullname>,
+                email: <email>,
+                role: <role>
+            } 
+            or
+            [
+                {
+                    username: <username>,
+                    fullname: <fullname>,
+                    email: <email>,
+                    role: <role>
+                },
+                ...
+            ]
+            
+        Description
+        -----------
+        Return data contains only the details of the user 
+        which matches the username. If id is None, it will return the 
+        list of users.
+        """
+        print(321)
+        if id is None:
+            print(123)
+            data = []
+            for value in USERS.values():
+                data.append(value)
+        else:
+            data = USERS.get(id, {})
+        print(data)
+        return data
+    try:
+        if request.method == 'GET':
+            id = request.args.get('id')
+            data = get_user(id)
+            return jsonify({"data": data}), 200
+
+        elif request.method == 'PUT':
+            return jsonify({"message": "ok"}), 200
+
+        elif request.method == 'POST':
+            return jsonify({"message": "ok"}), 200
+
+        elif request.method == 'DELETE':
+            return jsonify({"message": "ok"}), 200
+    except Exception as e:
+        print(e)
+        return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
+    return jsonify({"isError": True, "code": "Invalid request method", "message": "Invalid HTTP request method is being used"}), 400
+
+
+@app.route("/password/change", methods=['PUT'])
+@cross_origin(origin='*')
+@missing_param_handler
+def password_route():
+    """
+    Parameters (json)
+    -----------------
+    JSON that contains the username, old password and
+    new password entered by the user
+
+        Format of the JSON
+        ------------------
+        {
+            username: <username>,
+            oldPassword: <oldPassword>,
+            newPassword: <newPassword>
+        }
+
+    Return
+    ------
+    If the old password entered correctly
+        resp: JSON
+            JSON containing the successful message
+
+            Format of the resp
+            ------------------
+            {
+                message: <message>
+            }
+
+    Methods Allowed
+    ---------------
+    PUT
+        Update the the password of the user
+    """
+
+    try:
+
+        if request.method == 'PUT':
+            username = request.json['username']
+            oldPassword = request.json['oldPassword']
+            newPassword = request.json['newPassword']
+            
+            user = USERS.get(username, None)
+
+            if user is None:
+                return jsonify({"isError": True, "code": "Non-existing User", "message": "There is no existing user which matches the username."}), HTTPStatusCode.BAD_REQUEST
+
+            if user["password"] == oldPassword:
+                return jsonify({"message": "ok"}), 200
+            return jsonify({"isError": True, "code": "Invalid Credential", "message": "Wrong password."}), 403
+    except Exception as e:
+        print(e)
+        return jsonify({"isError": True, "code": "Error", "message": "Something wrong happens"}), 400
+    return jsonify({"isError": True, "code": "Invalid request method", "message": "Invalid HTTP request method is being used"}), 400
+
 @app.route("/dataset")
 @cross_origin(origin='*')
 @missing_param_handler
@@ -229,7 +443,6 @@ def get_dashboard_rateconversion():
             "to_myr": latest_data["to_myr"],
             "myr_to_others": myr_to_others
         }
-        print(data)
         return jsonify({"message": "Successful", "data": data}), 200
     except Exception as e:
         print(e)

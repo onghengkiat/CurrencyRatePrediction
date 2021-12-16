@@ -1,5 +1,5 @@
 from flask import Flask
-from constants import DATA_FILENAME
+from constants import DATA_FILENAME, SECRET_KEY
 import pandas as pd
 
 app = Flask(__name__)
@@ -11,6 +11,8 @@ df["date"] = pd.to_datetime(df["date"], format='%Y-%m-%d')
 df["date"] = df["date"].dt.tz_localize(None)
 # convert to datetime
 df["date"] = df["date"].dt.to_pydatetime()
+
+app.secret_key = SECRET_KEY
 
 malaysia_df = df[df['currency_code'] == 'MYR'].reset_index(drop=True)
 df = df[df['currency_code'] != 'MYR']

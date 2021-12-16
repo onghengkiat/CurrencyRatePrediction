@@ -26,7 +26,7 @@ async function fetchModelPerformanceGraph(currencyCode, algorithm, include_cpi, 
   .then(blob => URL.createObjectURL(blob))
   .catch(response => { 
     // case when backend server is working, and sent frontend the error message
-    if (response.isError) {
+    if (response.status) {
       return response.json();
     } else {
       // case when backend server is not working fine and didn't send any useful info to frontend
@@ -51,7 +51,7 @@ async function fetchModelPerformance(currencyCode, algorithm, include_cpi, inclu
   .then(data => data.data)
   .catch(response => { 
     // case when backend server is working, and sent frontend the error message
-    if (response.isError) {
+    if (response.status) {
       return response.json();
     } else {
       // case when backend server is not working fine and didn't send any useful info to frontend
@@ -76,7 +76,7 @@ async function fetchStatistics(currency_code) {
   .then(data => data.data)
   .catch(response => { 
     // case when backend server is working, and sent frontend the error message
-    if (response.isError) {
+    if (response.status) {
       return response.json();
     } else {
       // case when backend server is not working fine and didn't send any useful info to frontend
@@ -126,7 +126,7 @@ async function fetchAlgorithmList() {
   .then(data => data.data)
   .catch(response => { 
     // case when backend server is working, and sent frontend the error message
-    if (response.isError) {
+    if (response.status) {
       return response.json();
     } else {
       // case when backend server is not working fine and didn't send any useful info to frontend
@@ -135,15 +135,15 @@ async function fetchAlgorithmList() {
   })
 }
 
-export default function Statistics({ setError, setLoading }){
+export default function Statistics({ token, setError, setLoading }){
 
     const [pic, setPic] = useState();
     const [currencyCode, setCurrencyCode] = useState("USD");
-    const [algorithm, setAlgorithm] = useState("LSTM");
-    const [includeCPI, setCPI] = useState(false);
+    const [algorithm, setAlgorithm] = useState("LINEAR");
+    const [includeCPI, setCPI] = useState(true);
     const [includeGDP, setGDP] = useState(false);
     const [currencyList, setCurrencyList] = useState(["USD"]);
-    const [algorithmList, setAlgorithmList] = useState(["LSTM"]);
+    const [algorithmList, setAlgorithmList] = useState(["LINEAR"]);
     const [statistics, setStatistics] = useState({});
     const [modelPerformance, setModelPerformance] = useState({});
     const [sidePanelIsOpened, setSidePanelIsOpened] = useState(true);
@@ -205,7 +205,7 @@ export default function Statistics({ setError, setLoading }){
     return (
         <Container id="statistic-container" fluid>
             
-            <SidePanel isOpened={ sidePanelIsOpened } setIsOpened={ setSidePanelIsOpened } currencyList={ currencyList } setCurrencyCode={ setCurrencyCode } algorithmList={ algorithmList } setAlgorithm={ setAlgorithm } setCPI={ setCPI } setGDP={ setGDP }/>
+            <SidePanel token={ token } isOpened={ sidePanelIsOpened } setIsOpened={ setSidePanelIsOpened } currencyList={ currencyList } setCurrencyCode={ setCurrencyCode } algorithmList={ algorithmList } setAlgorithm={ setAlgorithm } setCPI={ setCPI } setGDP={ setGDP }/>
             
             <div className={rightContentClassname}>
                 <DatasetStatistics currencyCode={ currencyCode } statistics={ statistics }/>

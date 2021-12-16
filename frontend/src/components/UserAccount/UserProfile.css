@@ -1,0 +1,15 @@
+.secondary-text {
+    color: #6C757D;
+}
+
+@media (max-width: 575.9px) {
+    .user-profile-button {
+        margin-bottom: 10px;
+        margin-top: 10px;
+    }
+}
+
+#user-profile-container {
+    margin-top: 50px;
+    margin-bottom: 50px;
+}

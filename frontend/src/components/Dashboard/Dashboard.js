@@ -28,7 +28,7 @@ async function fetchCurrencyList() {
     .then(data => data.data)
     .catch(response => { 
       // case when backend server is working, and sent frontend the error message
-      if (response.isError) {
+      if (response.status) {
         return response.json();
       } else {
         // case when backend server is not working fine and didn't send any useful info to frontend
@@ -53,7 +53,7 @@ async function fetchAlgorithmList() {
   .then(data => data.data)
   .catch(response => { 
     // case when backend server is working, and sent frontend the error message
-    if (response.isError) {
+    if (response.status) {
       return response.json();
     } else {
       // case when backend server is not working fine and didn't send any useful info to frontend
@@ -78,7 +78,7 @@ async function fetchDashboardTimetrend(currency_code) {
   .then(data => data.data)
   .catch(response => { 
     // case when backend server is working, and sent frontend the error message
-    if (response.isError) {
+    if (response.status) {
       return response.json();
     } else {
       // case when backend server is not working fine and didn't send any useful info to frontend
@@ -103,7 +103,7 @@ async function fetchDashboardActualPred(currency_code, algorithm, include_cpi, i
   .then(data => data.data)
   .catch(response => { 
     // case when backend server is working, and sent frontend the error message
-    if (response.isError) {
+    if (response.status) {
       return response.json();
     } else {
       // case when backend server is not working fine and didn't send any useful info to frontend
@@ -128,7 +128,7 @@ async function fetchDashboardCurrencyDetail(currency_code) {
   .then(data => data.data)
   .catch(response => { 
     // case when backend server is working, and sent frontend the error message
-    if (response.isError) {
+    if (response.status) {
       return response.json();
     } else {
       // case when backend server is not working fine and didn't send any useful info to frontend
@@ -153,7 +153,7 @@ async function fetchRateConversion(currency_code) {
   .then(data => data.data)
   .catch(response => { 
     // case when backend server is working, and sent frontend the error message
-    if (response.isError) {
+    if (response.status) {
       return response.json();
     } else {
       // case when backend server is not working fine and didn't send any useful info to frontend
@@ -162,13 +162,13 @@ async function fetchRateConversion(currency_code) {
   })
 }
 
-export default function Dashboard({ setError, setLoading }){
+export default function Dashboard({ token, setError, setLoading }){
 
     const [currencyCode, setCurrencyCode] = useState("USD");
     const [currencyList, setCurrencyList] = useState(["USD"]);
-    const [algorithm, setAlgorithm] = useState("LSTM");
-    const [algorithmList, setAlgorithmList] = useState(["LSTM"]);
-    const [includeCPI, setCPI] = useState(false);
+    const [algorithm, setAlgorithm] = useState("LINEAR");
+    const [algorithmList, setAlgorithmList] = useState(["LINEAR"]);
+    const [includeCPI, setCPI] = useState(true);
     const [includeGDP, setGDP] = useState(false);
     const [timeTrendData, setTimeTrendData] = useState(null);
     const [predActualData, setPredActualData] = useState(null);
@@ -245,7 +245,7 @@ export default function Dashboard({ setError, setLoading }){
   return (
       <Container id="dashboard-container" fluid>
         
-        <SidePanel isOpened={ sidePanelIsOpened } setIsOpened={ setSidePanelIsOpened } currencyList={ currencyList } setCurrencyCode={ setCurrencyCode } algorithmList={ algorithmList } setAlgorithm={ setAlgorithm } setCPI={ setCPI } setGDP={ setGDP }/>
+        <SidePanel token={ token } isOpened={ sidePanelIsOpened } setIsOpened={ setSidePanelIsOpened } currencyList={ currencyList } setCurrencyCode={ setCurrencyCode } algorithmList={ algorithmList } setAlgorithm={ setAlgorithm } setCPI={ setCPI } setGDP={ setGDP }/>
 
         <div className={rightContentClassname}>
             <Row md={2} xs={1} className="dashboard-row">

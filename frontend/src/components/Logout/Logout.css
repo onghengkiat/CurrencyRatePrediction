@@ -1,0 +1,18 @@
+#logout-wrapper {
+    position: fixed;
+    left: 50%;
+    top: 40%;
+    transform: translate(-50%, -50%);
+    width: 70%;
+}
+
+#logout-header {
+    background-color: #DFF0D8;
+    color: #3C763D;
+}
+
+#logout-button {
+    border: 1px solid gainsboro;
+    color: #333333;
+    background: white;
+}
