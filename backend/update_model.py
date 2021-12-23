@@ -5,9 +5,9 @@ import pandas as pd
 import itertools
 from constants import MODEL_WITH_CPI, MODEL_WITH_GDP, MODEL_WITH_GDP_AND_CPI, MODEL_ONLY_RATE
 
-# scraper = WebScraper(CURRENCY_EXCHANGE_RATE_LINK, CPI_LINK, CPI_FILENAME, GDP_LINK, INTEREST_RATE_LINK, DOWNLOAD_DIR, duration=3)
-# df = scraper.get_df()
-# df.to_csv(DATA_FILENAME)
+scraper = WebScraper(CURRENCY_EXCHANGE_RATE_LINK, CPI_LINK, CPI_FILENAME, GDP_LINK, INTEREST_RATE_LINK, DOWNLOAD_DIR, duration=3)
+df = scraper.get_df()
+df.to_csv(DATA_FILENAME)
 df = pd.read_csv(DATA_FILENAME, index_col=0)
 
 df["date"] = pd.to_datetime(df["date"], format='%Y-%m-%d')

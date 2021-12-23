@@ -218,7 +218,11 @@ class WebScraper:
         # Example October will be 9 in this case
         end_month = cur_time.month - 1
         begin_year = end_year - self.duration
-        begin_month = end_month
+        begin_month = end_month + 1
+        if begin_month > 12:
+            begin_year = begin_year + 1
+            begin_month = 1
+        
         return f"_bnm_exchange_rate_display_portlet_monthStart={begin_month}&_bnm_exchange_rate_display_portlet_yearStart={begin_year}&_bnm_exchange_rate_display_portlet_monthEnd={end_month}&_bnm_exchange_rate_display_portlet_yearEnd={end_year}"
 
     def _get_exchange_rate_url(self):
@@ -556,8 +560,8 @@ class WebScraper:
         # Move the downloaded file to the temp app directory
         # Which will be deleted after being loaded
         tmpdir = tempfile.mkdtemp() 
-        destination = os.path.join(tmpdir, self.CPI_FILENAME)
-        # destination = self.CPI_FILENAME
+        # destination = os.path.join(tmpdir, self.CPI_FILENAME)
+        destination = self.CPI_FILENAME
         source = os.path.join(self.DOWNLOAD_DIR, self.CPI_FILENAME)
         if os.path.exists(source):
             os.rename(source, destination)
