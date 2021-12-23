@@ -62,7 +62,7 @@ export default function SidePanel({ token, isOpened, setIsOpened, currencyList, 
 
                 { (token.role === "admin" || token.role === "developer") &&
                 <Form.Group>
-                    <Form.Check className="side-panel-checkbox" type="checkbox" ref={ cpi_field } label="Include CPI"/>
+                    <Form.Check className="side-panel-checkbox" type="checkbox" defaultChecked={ true } ref={ cpi_field } label="Include CPI"/>
                 </Form.Group>}  
 
                 { (token.role === "admin" || token.role === "developer") &&
