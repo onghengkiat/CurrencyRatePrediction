@@ -18,7 +18,7 @@ export default function NavBar({ token }){
                 width={30}
                 height={30}
                 className="mr-3"
-                src="CurrencyExchangeIcon.png"
+                src="/CurrencyExchangeIcon.png"
                 alt="Generic placeholder"
                 />
                 CurEx
