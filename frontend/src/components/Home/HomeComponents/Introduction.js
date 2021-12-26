@@ -11,7 +11,7 @@ export default function Introduction(){
           width={360}
           height={360}
           className="responsive"
-          src="logo192.png"
+          src="CurrencyExchange.jpg"
           alt="Generic placeholder"
         />
       </Col>

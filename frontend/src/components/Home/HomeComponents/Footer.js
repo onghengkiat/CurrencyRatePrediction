@@ -14,7 +14,7 @@ export default function Footer(){
               width={360}
               height={360}
               className="responsive"
-              src="logo192.png"
+              src="Enquiry.png"
               alt="Generic placeholder"
             />
           </Media>
