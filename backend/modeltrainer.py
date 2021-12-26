@@ -17,17 +17,19 @@ pd.options.mode.chained_assignment = None
 
 class ModelTrainer():
 
-  ALGORITHMS_AVAILABLE = ["LSTM", "POLYNOMIAL", "LINEAR", "LASSO", "RIDGE"]
+  # ALGORITHMS_AVAILABLE = ["LSTM", "POLYNOMIAL", "LINEAR", "LASSO", "RIDGE"]
+  ALGORITHMS_AVAILABLE = ["LSTM", "POLYNOMIAL", "LINEAR", "RIDGE"]
 
   def __init__(self, currency_code, model_filename, model_save_path, 
                model_with_cpi, model_with_gdp, model_with_gdp_and_cpi, model_only_rate,
                algorithm="LSTM",  window_size=3, include_cpi=False, include_gdp=False, include_interest_rate=False, 
                num_of_neuron=100, num_of_iteration=10, dropout=0, alpha=0, test_n_months=6,
-               compute_difference=True, predict_change=False, same_scale=False, adjust_y_intercept=False):
+               compute_difference=True, predict_change=False, same_scale=False, adjust_y_intercept=False, adjust_y_intercept_interval=1):
     self.COLUMNS_TO_PROPAGATE = ['gdp', 'cpi', 'interest_rate']
     self.COLUMNS_TO_CALCULATE_DIFFERENCE = ['gdp', 'cpi', 'interest_rate']
     self.same_scale = same_scale
     self.adjust_y_intercept = adjust_y_intercept
+    self.adjust_y_intercept_interval = adjust_y_intercept_interval
 
     self.currency_code = currency_code
     self.scaler = None
@@ -74,6 +76,9 @@ class ModelTrainer():
 
   def set_num_of_iteration(self, num_of_iteration):
     self.num_of_iteration = num_of_iteration
+
+  def set_adjust_y_intercept_interval(self, adjust_y_intercept_interval):
+    self.adjust_y_intercept_interval = adjust_y_intercept_interval
 
   def set_include_cpi(self, include_cpi):
     self.include_cpi = include_cpi
@@ -130,9 +135,9 @@ class ModelTrainer():
       print("\n\n")
 
       if self.compute_difference:
-        x_test, x_train, y_test, y_train, last = self._preprocess_data(df, malaysia_df, verbose=not only_show_evaluation)
+        x_test, x_train, y_test, y_train, points_to_adjust_y_intercept, last = self._preprocess_data(df, malaysia_df, verbose=not only_show_evaluation)
       else:
-        x_test, x_train, y_test, y_train = self._preprocess_data(df, malaysia_df, verbose=not only_show_evaluation)
+        x_test, x_train, y_test, y_train, points_to_adjust_y_intercept = self._preprocess_data(df, malaysia_df, verbose=not only_show_evaluation)
 
       if not only_show_evaluation:
         print("\n\n")
@@ -142,9 +147,9 @@ class ModelTrainer():
         print("\n\n")
 
       if self.compute_difference:
-        main_evaluation_metric = self._evaluate_model(x_test, y_test, last=last)
+        main_evaluation_metric = self._evaluate_model(x_test, y_test, points_to_adjust_y_intercept, last=last)
       else:
-        main_evaluation_metric = self._evaluate_model(x_test, y_test)
+        main_evaluation_metric = self._evaluate_model(x_test, y_test, points_to_adjust_y_intercept)
       print("\n\n")
 
   def save(self):
@@ -264,6 +269,7 @@ class ModelTrainer():
       print("Propagating yearly and monthly data to daily...")
     
     _df = df[['from_myr', 'cpi', 'gdp', 'interest_rate', 'date']]
+    _df['month'] = _df.date.dt.month
     _df = propagate_data_to_daily(_df, self.COLUMNS_TO_PROPAGATE)
     _malaysia_df = propagate_data_to_daily(malaysia_df, self.COLUMNS_TO_PROPAGATE)
 
@@ -302,8 +308,6 @@ class ModelTrainer():
     _df[['cpi']] = MinMaxScaler(feature_range=(-1, 1)).fit_transform(_df[['cpi']])
     _df[['gdp']] = _df[['gdp']]/100
     _df[['interest_rate']] = _df[['interest_rate']]/100
-    # _df[['gdp']] = MinMaxScaler(feature_range=(-1, 1)).fit_transform(_df[['gdp']])
-    # _df[['interest_rate']] = MinMaxScaler(feature_range=(-1, 1)).fit_transform(_df[['interest_rate']])
     
     if verbose:
       print("Done Scaling.")
@@ -316,6 +320,23 @@ class ModelTrainer():
 
     _train, _test = _split_train_test(_df, self.test_n_months)
     last = last[len(_train) - 1]
+
+    points_to_adjust_y_intercept = []
+    begin_idx = 0
+    begin_month = None
+    idx = 0
+    for _, row in _train.iterrows():
+      if idx == 0:
+        begin_month = row['month']
+      elif (row['month'] - begin_month) == self.adjust_y_intercept_interval:
+        points_to_adjust_y_intercept.append({
+            'begin': begin_idx,
+            'end': idx + 1
+        })
+        begin_idx = idx + 1
+        begin_month = row['month']
+      
+      idx = idx + 1
 
     if verbose:
       print("Done Splitting.")
@@ -362,9 +383,9 @@ class ModelTrainer():
       print("Y train set shape: " + str(_y_train.shape))
     
     if self.compute_difference:
-      return _x_test, _x_train, _y_test, _y_train, last
+      return _x_test, _x_train, _y_test, _y_train, points_to_adjust_y_intercept, last
     else:
-      return _x_test, _x_train, _y_test, _y_train
+      return _x_test, _x_train, _y_test, _y_train, points_to_adjust_y_intercept
 
   def _train_model(self, x_train, y_train, verbose=True):
     if verbose:
@@ -484,7 +505,7 @@ class ModelTrainer():
 
     self.model = model
     
-  def _evaluate_model(self, x_test, y_test, verbose=True, last=None):
+  def _evaluate_model(self, x_test, y_test, points_to_adjust_y_intercept, verbose=True, last=None):
     def _plot_actual_predict_graph(y_test, y_pred, currency_code, window_size):
       max_bound = max(y_test)
       min_bound = min(y_test)
@@ -543,14 +564,38 @@ class ModelTrainer():
       poly = PolynomialFeatures(degree=2, interaction_only=True)
       _x_test = poly.fit_transform(x_test)
 
-    _y_pred = self.model.predict(_x_test)
-    _y_pred = np.array(_y_pred).reshape(-1, 1)
+    _y_pred = np.array([]).reshape(-1, 1)
     _y_test = np.array(y_test).reshape(-1, 1)
 
     if self.adjust_y_intercept and (self.algorithm == "LINEAR" or self.algorithm == "RIDGE"):
-      self.model.intercept_ = self.model.intercept_ - np.mean(_y_pred - _y_test)
-      _y_pred = self.model.predict(_x_test)
-      _y_pred = np.array(_y_pred).reshape(-1, 1)
+      begin = 0
+      for point in points_to_adjust_y_intercept:
+        temp_x_test = _x_test[point['begin'] : point['end']]
+        temp_y_test = _y_test[point['begin'] : point['end']]
+        temp_pred = self.model.predict(temp_x_test)
+        temp_pred = np.array(temp_pred).reshape(-1, 1)
+
+        self.model.intercept_ = self.model.intercept_ - np.mean(temp_pred - temp_y_test)
+
+        if begin == 0:
+          temp_pred = self.model.predict(temp_x_test)
+          temp_pred = np.array(temp_pred).reshape(-1, 1)
+
+        begin = point['end']
+        _y_pred = np.append(_y_pred, temp_pred)
+
+      temp_x_test = _x_test[begin : ]
+      temp_y_test = _y_test[begin : ]
+      if len(temp_x_test) != 0:
+        temp_pred = self.model.predict(temp_x_test)
+        temp_pred = np.array(temp_pred).reshape(-1, 1)
+
+        self.model.intercept_ = self.model.intercept_ - np.mean(temp_pred - temp_y_test)
+        # temp_pred = self.model.predict(temp_x_test)
+        # temp_pred = np.array(temp_pred).reshape(-1, 1)
+        _y_pred = np.append(_y_pred, temp_pred)
+    else:
+      _y_pred = self.model.predict(_x_test).reshape(-1, 1)
 
     if last is not None and self.predict_change:
       _prev_pred = last

@@ -139,11 +139,11 @@ export default function Statistics({ token, setError, setLoading }){
 
     const [pic, setPic] = useState();
     const [currencyCode, setCurrencyCode] = useState("USD");
-    const [algorithm, setAlgorithm] = useState("LINEAR");
+    const [algorithm, setAlgorithm] = useState("RIDGE");
     const [includeCPI, setCPI] = useState(true);
     const [includeGDP, setGDP] = useState(false);
     const [currencyList, setCurrencyList] = useState(["USD"]);
-    const [algorithmList, setAlgorithmList] = useState(["LINEAR"]);
+    const [algorithmList, setAlgorithmList] = useState(["RIDGE"]);
     const [statistics, setStatistics] = useState({});
     const [modelPerformance, setModelPerformance] = useState({});
     const [sidePanelIsOpened, setSidePanelIsOpened] = useState(true);

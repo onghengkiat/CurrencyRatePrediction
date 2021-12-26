@@ -25,8 +25,9 @@ for currency_code in currency_codes:
 
     modelTrainer = ModelTrainer(currency_code, MODEL_FILENAME, MODEL_SAVE_PATH,
             MODEL_WITH_CPI, MODEL_WITH_GDP, MODEL_WITH_GDP_AND_CPI, MODEL_ONLY_RATE,
-            num_of_neuron=30, num_of_iteration=30, alpha=0.001, dropout=0.1,
-            test_n_months=12, compute_difference=True, predict_change=False, adjust_y_intercept=True)
+            num_of_neuron=20, num_of_iteration=30, alpha=0.1, dropout=0.1,
+            test_n_months=12, compute_difference=True, predict_change=False,
+            adjust_y_intercept=True, adjust_y_intercept_interval=1)
     modelTrainer.set_window_size(WINDOW_SIZE)
 
     for algorithm in ModelTrainer.ALGORITHMS_AVAILABLE:    

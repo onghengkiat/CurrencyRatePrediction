@@ -60,7 +60,6 @@ def auth_route():
     if request.json is not None and 'username' in request.json and 'password' in request.json:
         username, password = request.json["username"], request.json["password"]
         user = USERS.get(username, None)
-
         if user is None:
             return jsonify({"isError": True, "code": "Non-existing User", "message": "There is no existing user which matches the username."}), 400
 
@@ -74,7 +73,7 @@ def auth_route():
 
             expire_date = datetime.now()
             expire_date = expire_date + timedelta(hours=24)
-            resp.set_cookie('jwt', token.decode('utf-8'), httponly=True, secure=False, domain='127.0.0.1:3000', samesite='None', expires=expire_date)
+            resp.set_cookie('jwt', token.decode('utf-8'), httponly=True, secure=False, samesite='None', expires=expire_date)
             return resp
     return jsonify({"isError": True, "code": "Invalid Credential", "message": "Wrong username or password."}), 403
 
@@ -469,7 +468,7 @@ def get_dashboard_timetrend():
 @cross_origin(origin='*')
 @missing_param_handler
 def get_actual_predicted_graph():
-    def _preprocess_data(df, malaysia_df, algorithm, include_cpi=False, include_gdp=False, include_interest_rate=False):
+    def _preprocess_data(df, malaysia_df, algorithm, adjust_y_intercept_interval=1, include_cpi=False, include_gdp=False, include_interest_rate=False):
         def propagate_data_to_daily(_df, columns_to_be_interpolated):
             prev = {}
             for idx, row in _df.iterrows():
@@ -497,8 +496,11 @@ def get_actual_predicted_graph():
                 datay.append(data[i + look_back, 4])
             return np.array(datax), np.array(datay)
 
+        _df = df[['from_myr', 'cpi', 'gdp', 'interest_rate', 'date', 'year']]
+        _df['month'] = _df.date.dt.month
+
         COLUMNS_TO_PROPAGATE = ['gdp', 'cpi', 'interest_rate']
-        _df = propagate_data_to_daily(df, COLUMNS_TO_PROPAGATE)
+        _df = propagate_data_to_daily(_df, COLUMNS_TO_PROPAGATE)
         _malaysia_df = propagate_data_to_daily(malaysia_df, COLUMNS_TO_PROPAGATE)
 
         COLUMNS_TO_CALCULATE_DIFFERENCE = ['gdp', 'cpi', 'interest_rate']
@@ -513,6 +515,25 @@ def get_actual_predicted_graph():
         _df[['cpi']] = MinMaxScaler(feature_range=(-1, 1)).fit_transform(_df[['cpi']])
         _df[['gdp']] = _df[['gdp']]/100
         _df[['interest_rate']] = _df[['interest_rate']]/100
+
+        _df = _df[_df['year'] == 2021].reset_index(drop=True)
+
+        points_to_adjust_y_intercept = []
+        begin_idx = 0
+        begin_month = None
+        idx = 0
+        for _, row in _df.iterrows():
+            if idx == 0:
+                begin_month = row['month']
+            elif (row['month'] - begin_month) == adjust_y_intercept_interval:
+                points_to_adjust_y_intercept.append({
+                    'begin': begin_idx,
+                    'end': idx + 1
+                })
+                begin_idx = idx + 1
+                begin_month = row['month']
+            idx = idx + 1
+
         _df = np.array(_df[['from_myr', 'cpi', 'gdp', 'interest_rate', 'target']]).reshape(-1, 5)
 
         x, y = split_x_y(_df, WINDOW_SIZE, include_cpi=include_cpi, include_gdp=include_gdp, include_interest_rate=include_interest_rate)
@@ -530,7 +551,43 @@ def get_actual_predicted_graph():
             x = poly.fit_transform(x)
 
         y = y.reshape(y.shape[0], 1)
-        return x, y, _prev, from_myr_scaler
+        return x, y, _prev, from_myr_scaler, points_to_adjust_y_intercept
+
+    def _predict_data(model, algorithm, _x_test, _y_test, points_to_adjust_y_intercept, adjust_y_intercept = 1):
+
+        _y_pred = np.array([]).reshape(-1, 1)
+
+        if adjust_y_intercept and (algorithm == "LINEAR" or algorithm == "RIDGE"):
+            begin = 0
+            for point in points_to_adjust_y_intercept:
+                temp_x_test = _x_test[point['begin'] : point['end']]
+                temp_y_test = _y_test[point['begin'] : point['end']]
+                temp_pred = model.predict(temp_x_test)
+                temp_pred = np.array(temp_pred).reshape(-1, 1)
+
+                model.intercept_ = model.intercept_ - np.mean(temp_pred - temp_y_test)
+
+                if begin == 0:
+                    temp_pred = model.predict(temp_x_test)
+                    temp_pred = np.array(temp_pred).reshape(-1, 1)
+
+                begin = point['end']
+                _y_pred = np.append(_y_pred, temp_pred)
+
+            temp_x_test = _x_test[begin : ]
+            temp_y_test = _y_test[begin : ]
+            if len(temp_x_test) != 0:
+                temp_pred = model.predict(temp_x_test)
+                temp_pred = np.array(temp_pred).reshape(-1, 1)
+
+                model.intercept_ = model.intercept_ - np.mean(temp_pred - temp_y_test)
+                # temp_pred = model.predict(temp_x_test)
+                # temp_pred = np.array(temp_pred).reshape(-1, 1)
+                _y_pred = np.append(_y_pred, temp_pred)
+        else:
+            _y_pred = model.predict(_x_test).reshape(-1, 1)
+
+        return _y_pred, model
 
     def _forecast_next_n_days(model, scaler, input_data, prev_data, last_y_value, n):
         results = []
@@ -575,7 +632,8 @@ def get_actual_predicted_graph():
         results = results.reshape(results.shape[0], 1)
         return results
 
-    FORECAST_DAYS = 7
+    # One month except for working days
+    FORECAST_DAYS = 22
     try:
         currency_code = request.args.get('currency_code', None)
         algorithm = request.args.get('algorithm', 'LSTM')
@@ -600,19 +658,22 @@ def get_actual_predicted_graph():
 
         _df = df[df['currency_code'] == currency_code].reset_index(drop=True)
 
+        _df['year'] = _df.date.dt.year
+
         # Skip the first n, window size in which it can't make predictions on it
-        date = _df["date"].tolist()[WINDOW_SIZE:]
+        date = _df[_df["year"] == 2021]["date"].tolist()[WINDOW_SIZE:]
 
         # Data Preprocessing
-        x, y, prev_data, from_myr_scaler = _preprocess_data(_df, malaysia_df, algorithm, include_cpi=include_cpi, include_gdp=include_gdp)
-        x = x[-90:]
-        y = y[-90:]
-        date = date[-90:]
+        x, y, prev_data, from_myr_scaler , points_to_adjust_y_intercept = _preprocess_data(_df, malaysia_df, algorithm, include_cpi=include_cpi, include_gdp=include_gdp)
 
         # To mark the beginning of forecast
-        markLineIndex = len(date) - 1
-        y_pred = model.predict(x)
+        y_pred, model = _predict_data(model, algorithm, x, y, points_to_adjust_y_intercept)
         y_pred = y_pred.reshape(y_pred.shape[0], 1)
+
+        # y_pred = y_pred[-90:]
+        # y = y[-90:]
+        # date = date[-90:]
+        markLineIndex = len(date) - 1
 
         # Predict next n days currency rate
         future_forecast = _forecast_next_n_days(model, from_myr_scaler, x[-1], prev_data, y[-1][0], FORECAST_DAYS)

@@ -13,7 +13,7 @@ MODEL_ONLY_RATE = "RATE_ONLY"
 
 MODEL_SAVE_PATH = "./model"
 MODEL_FILENAME = "model"
-WINDOW_SIZE = 3
+WINDOW_SIZE = 7
 
 CURRENCY_TO_COUNTRY = {
     "USD": "United States",

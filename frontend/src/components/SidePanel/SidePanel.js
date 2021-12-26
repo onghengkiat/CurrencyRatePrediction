@@ -53,7 +53,7 @@ export default function SidePanel({ token, isOpened, setIsOpened, currencyList, 
                         {
                             algorithmList.map((value, _) => {
                                 return (  
-                                    value === "LINEAR" ? <option selected value={value}>{value}</option>: <option value={value}>{value}</option>
+                                    value === "RIDGE" ? <option selected value={value}>{value}</option>: <option value={value}>{value}</option>
                                 )
                             })
                         }

@@ -166,8 +166,8 @@ export default function Dashboard({ token, setError, setLoading }){
 
     const [currencyCode, setCurrencyCode] = useState("USD");
     const [currencyList, setCurrencyList] = useState(["USD"]);
-    const [algorithm, setAlgorithm] = useState("LINEAR");
-    const [algorithmList, setAlgorithmList] = useState(["LINEAR"]);
+    const [algorithm, setAlgorithm] = useState("RIDGE");
+    const [algorithmList, setAlgorithmList] = useState(["RIDGE"]);
     const [includeCPI, setCPI] = useState(true);
     const [includeGDP, setGDP] = useState(false);
     const [timeTrendData, setTimeTrendData] = useState(null);
