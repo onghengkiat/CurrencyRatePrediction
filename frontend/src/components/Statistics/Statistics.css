@@ -33,8 +33,10 @@
 
 .subtitle {
     color: #999999;
+    font-weight: 500;
 }
 
 .subtitle-content {
     font-size: 16px;
+    font-weight: 500;
 }
