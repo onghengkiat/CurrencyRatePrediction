@@ -363,6 +363,7 @@ def get_statistic():
         try: 
             _df = df[df['currency_code'] == currency_code]
             _df.reset_index(inplace=True)
+            date_range = _df.iloc[0]['date'].strftime('%d %b %Y') + " to " + _df.iloc[-1]['date'].strftime('%d %b %Y')
             min_rate = _df['from_myr'][0]
             min_date = _df['date'][0].strftime('%d %b %Y')
             max_rate = _df['from_myr'][0]
@@ -380,6 +381,8 @@ def get_statistic():
                 "min_date": min_date,
                 "max_rate": max_rate,
                 "max_date": max_date,
+                "date_range": date_range,
+                "num_of_records": len(_df)
             }
             return jsonify({"message": "Successful", "data": data}), 200
         except Exception as e:

@@ -30,3 +30,11 @@
     background-color:white;
     float: left;
 }
+
+.subtitle {
+    color: #999999;
+}
+
+.subtitle-content {
+    font-size: 16px;
+}
