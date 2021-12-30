@@ -17,7 +17,7 @@ export default function TimeTrend({ data, chartTitle }){
   }
 
   const colors = ['blue', 'green', 'red'];
-  const legends = ["From MYR", "GDP Growth Rate", "CPI"]
+  const legends = ["From MYR", "GDP Growth Rate, %", "CPI"]
   
   const option = {
     color: colors,
@@ -79,9 +79,6 @@ export default function TimeTrend({ data, chartTitle }){
         splitLine: {
           show: false,
         },
-        axisLabel: {
-          formatter: '{value} %'
-        }
       },
       {
         type: 'value',

@@ -455,6 +455,9 @@ def get_dashboard_timetrend():
         _df = df[df['currency_code'] == currency_code]
         _df = _df.groupby([pd.DatetimeIndex(_df.date).to_period('M')]).nth(0).reset_index(drop=True)
         _df['date'] = _df['date'].dt.strftime("%Y/%m/%d")
+        _df["gdp"] = _df["gdp"].round(4)
+        _df["cpi"] = _df["cpi"].round(4)
+        _df["interest_rate"] = _df["interest_rate"].round(4)
         data = {
             "gdp": _df[["date", "gdp"]].values.tolist(),
             "cpi": _df[["date", "cpi"]].values.tolist(),
@@ -679,7 +682,7 @@ def get_actual_predicted_graph():
 
         # Predict next n days currency rate
         future_forecast = _forecast_next_n_days(model, from_myr_scaler, x[-1], prev_data, y[-1][0], FORECAST_DAYS)
-        y_pred = np.concatenate((y_pred, future_forecast))
+        y_pred = np.concatenate((y_pred, future_forecast)).round(decimals=4)
 
         # Append date and data for actual for the 30 days forecast
         for _ in range(FORECAST_DAYS):
