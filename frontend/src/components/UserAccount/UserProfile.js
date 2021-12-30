@@ -4,6 +4,7 @@ import { useHistory } from 'react-router-dom';
 import { URL_PREFIX } from '../../constants/API';
 
 import './UserProfile.css';
+import Image from 'react-bootstrap/Image';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Card from 'react-bootstrap/Card';
@@ -144,7 +145,14 @@ export default function UserProfile({ token, setError, editing=false, setSuccess
                 <Card>
                     <Card.Body>
                         <div className="d-flex flex-column align-items-center text-center">
-                            <img src="https://bootdey.com/img/Content/avatar/avatar7.png" alt="Admin" className="rounded-circle" width="150"/>
+
+                            <Image
+                            width={180}
+                            height={180}
+                            className="responsive rounded-circle"
+                            src="/UserProfile.png"
+                            alt="Generic placeholder"
+                            />
                             <div className="mt-3">
                                 <h4>{data["fullname"]}</h4>
                             </div>

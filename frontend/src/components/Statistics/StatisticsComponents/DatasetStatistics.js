@@ -20,6 +20,8 @@ export default function DatasetStatistics({ currencyCode, statistics }){
                             <GoGraph className="statistic-title-icon"/>
                             <h5><b>Dataset Statistics</b></h5>
                             <h5 className="text-muted"><b>Currency Code: {currencyCode}</b></h5>
+                            <h5 className="text-muted"><b>Date Range: {currencyCode}</b></h5>
+                            <h5 className="text-muted"><b>Number of Records: {currencyCode}</b></h5>
                         </Col>
                     </Row>
                 </Container>
