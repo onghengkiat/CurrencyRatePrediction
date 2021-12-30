@@ -3,6 +3,7 @@ import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import { URL_PREFIX } from '../../constants/API';
+import timeoutPromise from '../../utils/timeoutPromise';
 
 import './Dashboard.css';
 import SidePanel from '../SidePanel/SidePanel';
@@ -183,7 +184,12 @@ export default function Dashboard({ token, setError, setLoading }){
       async function fetchData() {
         setLoading(true);
 
-        const currencyListResponse = await fetchCurrencyList();
+        let currencyListResponse = null
+        try {
+          currencyListResponse = await timeoutPromise(5000, fetchCurrencyList());
+        } catch (error) {
+          currencyListResponse = BACKEND_SERVER_ERROR;
+        }
         if (currencyListResponse.isError){
           setError(currencyListResponse);
         } else {
@@ -191,7 +197,12 @@ export default function Dashboard({ token, setError, setLoading }){
           setCurrencyList(data);
         }
 
-        const algorithmListResponse = await fetchAlgorithmList();
+        let algorithmListResponse = null
+        try {
+          algorithmListResponse = await timeoutPromise(5000, fetchAlgorithmList());
+        } catch (error) {
+          algorithmListResponse = BACKEND_SERVER_ERROR;
+        }
         if (algorithmListResponse.isError){
           setError(algorithmListResponse);
         } else {
@@ -199,7 +210,12 @@ export default function Dashboard({ token, setError, setLoading }){
           setAlgorithmList(data);
         }
         
-        const dashboardTimeTrendResponse = await fetchDashboardTimetrend(currencyCode);
+        let dashboardTimeTrendResponse = null
+        try {
+          dashboardTimeTrendResponse = await timeoutPromise(5000, fetchDashboardTimetrend(currencyCode));
+        } catch (error) {
+          dashboardTimeTrendResponse = BACKEND_SERVER_ERROR;
+        }
         if (dashboardTimeTrendResponse.isError){
           setError(dashboardTimeTrendResponse);
           setTimeTrendData(null);
@@ -208,7 +224,12 @@ export default function Dashboard({ token, setError, setLoading }){
           setTimeTrendData(data);
         }
 
-        const dashboardActualPredResponse = await fetchDashboardActualPred(currencyCode, algorithm, includeCPI, includeGDP);
+        let dashboardActualPredResponse = null
+        try {
+          dashboardActualPredResponse = await timeoutPromise(5000, fetchDashboardActualPred(currencyCode, algorithm, includeCPI, includeGDP));
+        } catch (error) {
+          dashboardActualPredResponse = BACKEND_SERVER_ERROR;
+        }
         if (dashboardActualPredResponse.isError){
           setError(dashboardActualPredResponse);
           setPredActualData(null);
@@ -217,7 +238,12 @@ export default function Dashboard({ token, setError, setLoading }){
           setPredActualData(data);
         }
 
-        const dashboardCurrencyDetailResponse = await fetchDashboardCurrencyDetail(currencyCode);
+        let dashboardCurrencyDetailResponse = null
+        try {
+          dashboardCurrencyDetailResponse = await timeoutPromise(5000, fetchDashboardCurrencyDetail(currencyCode));
+        } catch (error) {
+          dashboardCurrencyDetailResponse = BACKEND_SERVER_ERROR;
+        }
         if (dashboardCurrencyDetailResponse.isError){
           setError(dashboardCurrencyDetailResponse);
           setCurrencyDetailData(null);
@@ -226,7 +252,12 @@ export default function Dashboard({ token, setError, setLoading }){
           setCurrencyDetailData(data);
         }
 
-        const rateConversionResponse = await fetchRateConversion(currencyCode);
+        let rateConversionResponse = null
+        try {
+          rateConversionResponse = await timeoutPromise(5000, fetchRateConversion(currencyCode));
+        } catch (error) {
+          rateConversionResponse = BACKEND_SERVER_ERROR;
+        }
         if (rateConversionResponse.isError){
           setError(rateConversionResponse);
           setRateConversionData(null);

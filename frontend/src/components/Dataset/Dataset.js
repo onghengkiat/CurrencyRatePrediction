@@ -1,5 +1,6 @@
 import { icons } from './TableIcons';
 import { URL_PREFIX } from '../../constants/API';
+import timeoutPromise from '../../utils/timeoutPromise';
 import MaterialTable from 'material-table';
 import React, { useEffect, useState } from 'react';
 import './Dataset.css'
@@ -38,7 +39,14 @@ export default function Dataset({ setError, setSuccess, setLoading }) {
     useEffect( () => {
       async function fetchData() {
         setLoading(true);
-        const response = await fetchDashboardData();
+
+        let response = null
+        try {
+          response = await timeoutPromise(5000, fetchDashboardData());
+        } catch (error) {
+          response = BACKEND_SERVER_ERROR;
+        }
+
         if (response.isError){
           setError(response);
         } else {

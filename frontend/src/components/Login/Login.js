@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { URL_PREFIX } from '../../constants/API';
+import timeoutPromise from '../../utils/timeoutPromise';
 import PropTypes from 'prop-types';
 import './Login.css';
 import Form from 'react-bootstrap/Form';
@@ -11,6 +12,7 @@ import { BACKEND_SERVER_ERROR } from '../../constants/error';
 ///////////////////
 
 async function loginUser(credentials) {
+
   return fetch(`${URL_PREFIX}authenticate`, {
     method: 'POST',
     headers: {
@@ -51,10 +53,12 @@ export default function Login({ setToken, setError }) {
     e.preventDefault();
     
     // authenticate the username and password
-    const response = await loginUser({
-      username,
-      password
-    });
+    let response = null
+    try {
+      response = await timeoutPromise(5000, loginUser({username, password}));
+    } catch (error) {
+      response = BACKEND_SERVER_ERROR;
+    }
 
     if (response.isError){
       setError(response);

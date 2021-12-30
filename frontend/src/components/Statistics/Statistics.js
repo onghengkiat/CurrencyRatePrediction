@@ -1,6 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import Container from 'react-bootstrap/Container';
 import { URL_PREFIX } from '../../constants/API';
+import timeoutPromise from '../../utils/timeoutPromise';
 
 import './Statistics.css';
 import SidePanel from '../SidePanel/SidePanel';
@@ -154,7 +155,12 @@ export default function Statistics({ token, setError, setLoading }){
       async function fetchData() {
         setLoading(true);
 
-        const modelPerformanceGraphResponse = await fetchModelPerformanceGraph(currencyCode, algorithm, includeCPI, includeGDP);
+        let modelPerformanceGraphResponse = null
+        try {
+          modelPerformanceGraphResponse = await timeoutPromise(5000, fetchModelPerformanceGraph(currencyCode, algorithm, includeCPI, includeGDP));
+        } catch (error) {
+          modelPerformanceGraphResponse = BACKEND_SERVER_ERROR;
+        }
         if (modelPerformanceGraphResponse.isError){
           setError(modelPerformanceGraphResponse);
         } else {
@@ -162,7 +168,12 @@ export default function Statistics({ token, setError, setLoading }){
           setPic(data);
         }
 
-        const currencyListResponse = await fetchCurrencyList();
+        let currencyListResponse = null
+        try {
+          currencyListResponse = await timeoutPromise(5000, fetchCurrencyList());
+        } catch (error) {
+          currencyListResponse = BACKEND_SERVER_ERROR;
+        }
         if (currencyListResponse.isError){
           setError(currencyListResponse);
         } else {
@@ -170,7 +181,12 @@ export default function Statistics({ token, setError, setLoading }){
           setCurrencyList(data);
         }
 
-        const statisticsResponse = await fetchStatistics(currencyCode);
+        let statisticsResponse = null
+        try {
+          statisticsResponse = await timeoutPromise(5000, fetchStatistics(currencyCode));
+        } catch (error) {
+          statisticsResponse = BACKEND_SERVER_ERROR;
+        }
         if (statisticsResponse.isError){
           setError(statisticsResponse);
         } else {
@@ -178,7 +194,12 @@ export default function Statistics({ token, setError, setLoading }){
           setStatistics(data);
         }
 
-        const modelPerformanceResponse = await fetchModelPerformance(currencyCode, algorithm, includeCPI, includeGDP);
+        let modelPerformanceResponse = null
+        try {
+          modelPerformanceResponse = await timeoutPromise(5000, fetchModelPerformance(currencyCode, algorithm, includeCPI, includeGDP));
+        } catch (error) {
+          modelPerformanceResponse = BACKEND_SERVER_ERROR;
+        }
         if (modelPerformanceResponse.isError){
           setError(modelPerformanceResponse);
         } else {
@@ -186,7 +207,12 @@ export default function Statistics({ token, setError, setLoading }){
           setModelPerformance(data);
         }
 
-        const algorithmListResponse = await fetchAlgorithmList();
+        let algorithmListResponse = null
+        try {
+          algorithmListResponse = await timeoutPromise(5000, fetchAlgorithmList());
+        } catch (error) {
+          algorithmListResponse = BACKEND_SERVER_ERROR;
+        }
         if (algorithmListResponse.isError){
           setError(algorithmListResponse);
         } else {
