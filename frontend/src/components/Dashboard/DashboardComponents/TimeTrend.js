@@ -16,7 +16,7 @@ export default function TimeTrend({ data, chartTitle }){
     )
   }
 
-  const colors = ['blue', 'green', 'red'];
+  const colors = ['#0071b2', '#e69f00', '#d55c00'];
   const legends = ["From MYR", "GDP Growth Rate, %", "CPI"]
   
   const option = {
