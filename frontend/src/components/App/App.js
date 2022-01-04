@@ -30,10 +30,6 @@ function App() {
   const { success, setSuccess } = useSuccess();
   const { loading, setLoading } = useLoading();
 
-  useEffect(() => {
-    document.title = "CurEx"
-  }, [])
-
   return (
       <BrowserRouter>
         <ErrorToast error={ error } setError={ setError }/>
