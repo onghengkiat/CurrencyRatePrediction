@@ -640,8 +640,8 @@ def get_actual_predicted_graph():
         results = results.reshape(results.shape[0], 1)
         return results
 
-    # One month except for working days
-    FORECAST_DAYS = 22
+    # next 2 weeks
+    FORECAST_DAYS = 14
     try:
         currency_code = request.args.get('currency_code', None)
         algorithm = request.args.get('algorithm', 'LSTM')
