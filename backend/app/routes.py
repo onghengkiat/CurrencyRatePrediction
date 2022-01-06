@@ -265,7 +265,7 @@ def get_dashboard():
             "rate_changed_from_myr": rate_changed_from_myr,
             "rate_is_increased_from_myr": rate_is_increased_from_myr,
             "gdp": round(row['gdp'], 4),
-            "cpi": round(row['cpi'], 4),
+            "cpi": round(row['cpi_growth_rate'], 4),
             "interest_rate": round(row['interest_rate'], 4),
         }
 
@@ -459,11 +459,11 @@ def get_dashboard_timetrend():
         _df = _df.groupby([pd.DatetimeIndex(_df.date).to_period('M')]).nth(0).reset_index(drop=True)
         _df['date'] = _df['date'].dt.strftime("%Y/%m/%d")
         _df["gdp"] = _df["gdp"].round(4)
-        _df["cpi"] = _df["cpi"].round(4)
+        _df["cpi"] = _df["cpi_growth_rate"].round(4)
         _df["interest_rate"] = _df["interest_rate"].round(4)
         data = {
             "gdp": _df[["date", "gdp"]].values.tolist(),
-            "cpi": _df[["date", "cpi"]].values.tolist(),
+            "cpi": _df[["date", "cpi_growth_rate"]].values.tolist(),
             "interest_rate": _df[["date", "interest_rate"]].values.tolist(),
             "from_myr": _df[["date", "from_myr"]].values.tolist()
         }
@@ -509,12 +509,15 @@ def get_actual_predicted_graph():
 
         COLUMNS_TO_PROPAGATE = ['gdp', 'cpi', 'interest_rate']
         _df = propagate_data_to_daily(_df, COLUMNS_TO_PROPAGATE)
+
+        print(malaysia_df)
         _malaysia_df = propagate_data_to_daily(malaysia_df, COLUMNS_TO_PROPAGATE)
+        print(malaysia_df)
 
         COLUMNS_TO_CALCULATE_DIFFERENCE = ['gdp', 'cpi', 'interest_rate']
         for col in COLUMNS_TO_CALCULATE_DIFFERENCE:
             _df[col] = _malaysia_df[col] - _df[col]
-
+        print(malaysia_df)
         _df['target'] = _df['from_myr']
         _df['from_myr'] = _df['from_myr'].diff().fillna(0)
 
@@ -523,7 +526,7 @@ def get_actual_predicted_graph():
         _df[['cpi']] = MinMaxScaler(feature_range=(-1, 1)).fit_transform(_df[['cpi']])
         _df[['gdp']] = _df[['gdp']]/100
         _df[['interest_rate']] = _df[['interest_rate']]/100
-
+        print(_df)
         _df = _df[_df['year'] == 2021].reset_index(drop=True)
 
         points_to_adjust_y_intercept = []

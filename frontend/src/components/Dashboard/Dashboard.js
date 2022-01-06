@@ -186,7 +186,7 @@ export default function Dashboard({ token, setError, setLoading }){
 
         let currencyListResponse = null
         try {
-          currencyListResponse = await timeoutPromise(5000, fetchCurrencyList());
+          currencyListResponse = await timeoutPromise(15000, fetchCurrencyList());
         } catch (error) {
           currencyListResponse = BACKEND_SERVER_ERROR;
         }
@@ -199,7 +199,7 @@ export default function Dashboard({ token, setError, setLoading }){
 
         let algorithmListResponse = null
         try {
-          algorithmListResponse = await timeoutPromise(5000, fetchAlgorithmList());
+          algorithmListResponse = await timeoutPromise(15000, fetchAlgorithmList());
         } catch (error) {
           algorithmListResponse = BACKEND_SERVER_ERROR;
         }
@@ -212,7 +212,7 @@ export default function Dashboard({ token, setError, setLoading }){
         
         let dashboardTimeTrendResponse = null
         try {
-          dashboardTimeTrendResponse = await timeoutPromise(5000, fetchDashboardTimetrend(currencyCode));
+          dashboardTimeTrendResponse = await timeoutPromise(15000, fetchDashboardTimetrend(currencyCode));
         } catch (error) {
           dashboardTimeTrendResponse = BACKEND_SERVER_ERROR;
         }
@@ -226,7 +226,7 @@ export default function Dashboard({ token, setError, setLoading }){
 
         let dashboardActualPredResponse = null
         try {
-          dashboardActualPredResponse = await timeoutPromise(5000, fetchDashboardActualPred(currencyCode, algorithm, includeCPI, includeGDP));
+          dashboardActualPredResponse = await timeoutPromise(15000, fetchDashboardActualPred(currencyCode, algorithm, includeCPI, includeGDP));
         } catch (error) {
           dashboardActualPredResponse = BACKEND_SERVER_ERROR;
         }
@@ -240,7 +240,7 @@ export default function Dashboard({ token, setError, setLoading }){
 
         let dashboardCurrencyDetailResponse = null
         try {
-          dashboardCurrencyDetailResponse = await timeoutPromise(5000, fetchDashboardCurrencyDetail(currencyCode));
+          dashboardCurrencyDetailResponse = await timeoutPromise(15000, fetchDashboardCurrencyDetail(currencyCode));
         } catch (error) {
           dashboardCurrencyDetailResponse = BACKEND_SERVER_ERROR;
         }
@@ -254,7 +254,7 @@ export default function Dashboard({ token, setError, setLoading }){
 
         let rateConversionResponse = null
         try {
-          rateConversionResponse = await timeoutPromise(5000, fetchRateConversion(currencyCode));
+          rateConversionResponse = await timeoutPromise(15000, fetchRateConversion(currencyCode));
         } catch (error) {
           rateConversionResponse = BACKEND_SERVER_ERROR;
         }

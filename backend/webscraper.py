@@ -292,7 +292,7 @@ class WebScraper:
         df = pd.DataFrame.from_dict(data)
         return df
 
-    def _scrap_cpi(self):
+    def _scrap_cpi(self, scrap_cpi_growth_rate=False):
 
         def click_changing_button(dr, class_name, position=0):
             for i in range(20):
@@ -439,7 +439,10 @@ class WebScraper:
                     lambda driver : driver.find_element_by_class_name("PPTLVNodeText")
                 )
                 time.sleep(1)
-                click_changing_button(driver, "PPTLVNodeText")
+                if scrap_cpi_growth_rate:
+                    click_changing_button(driver, "PPTLVNodeText", position=5)
+                else:
+                    click_changing_button(driver, "PPTLVNodeText")
 
                 # Apply the changes
                 time.sleep(1)
@@ -560,8 +563,8 @@ class WebScraper:
         # Move the downloaded file to the temp app directory
         # Which will be deleted after being loaded
         tmpdir = tempfile.mkdtemp() 
-        # destination = os.path.join(tmpdir, self.CPI_FILENAME)
-        destination = self.CPI_FILENAME
+        destination = os.path.join(tmpdir, self.CPI_FILENAME)
+        # destination = self.CPI_FILENAME
         source = os.path.join(self.DOWNLOAD_DIR, self.CPI_FILENAME)
         if os.path.exists(source):
             os.rename(source, destination)
@@ -595,6 +598,57 @@ class WebScraper:
                 df.loc[(df["month"] == month) & (df["year"] == year) & (df["currency_code"] == currency_code), "cpi"] = row[date]
 
         print("Done Scraping CPI Data.\n\n")
+
+        print("Scraping CPI Growth Rate Data...")
+
+        connection_trial = 0
+        connection_is_failed = True
+        while connection_is_failed:
+            try:
+                self._scrap_cpi(scrap_cpi_growth_rate=True)
+                connection_is_failed = False
+            except Exception as e:
+                connection_trial += 1
+                print(f"Connection failed for {connection_trial} trials.")
+
+        # Move the downloaded file to the temp app directory
+        # Which will be deleted after being loaded
+        tmpdir = tempfile.mkdtemp() 
+        destination = os.path.join(tmpdir, self.CPI_FILENAME)
+        # destination = self.CPI_FILENAME
+        source = os.path.join(self.DOWNLOAD_DIR, self.CPI_FILENAME)
+        if os.path.exists(source):
+            os.rename(source, destination)
+        cpi_df = pd.read_excel(destination)
+
+        # First column name changes from Unnamed to country_name
+        column_names = cpi_df.columns.tolist()
+        column_names[0] = "country_name"
+        cpi_df.columns = column_names
+
+        # Search for the countries that are not found in the CPI database and filter their currency codes out from the df
+        for key, val in self.CPI_MAPPING.items():
+            if key not in cpi_df["country_name"].unique():
+                print(key + " is not found in the CPI database")
+                df = df[df['currency_code'] != val["currency_code"]]
+
+        df["month"] = df.date.dt.month
+        df["year"] = df.date.dt.year
+        df["cpi_growth_rate"] = np.nan
+        for i, row in cpi_df.iterrows():
+            currency_code = self.CPI_MAPPING[row["country_name"]]["currency_code"]
+            for date in column_names[1:]:
+                date_obj = datetime.strptime(date, "%b %Y")
+                month, year = date_obj.month, date_obj.year
+                # plus 1 because cur month is used to predict next month
+                month = int(month) + 1
+                year = int(year)
+                if month > 12:
+                    month = 1
+                    year = year + 1
+                df.loc[(df["month"] == month) & (df["year"] == year) & (df["currency_code"] == currency_code), "cpi_growth_rate"] = row[date]
+
+        print("Done Scraping CPI Growth Rate Data.\n\n")
 
         print("Scraping GDP Data...")
         connection_trial = 0
@@ -672,6 +726,7 @@ class WebScraper:
         df['interest_rate'] = df.groupby(['currency_code'], sort=False)['interest_rate'].apply(lambda x: x.ffill().bfill())
         df['gdp'] = df.groupby(['currency_code'], sort=False)['gdp'].apply(lambda x: x.ffill().bfill())
         df['cpi'] = df.groupby(['currency_code'], sort=False)['cpi'].apply(lambda x: x.ffill().bfill())
+        df['cpi_growth_rate'] = df.groupby(['currency_code'], sort=False)['cpi_growth_rate'].apply(lambda x: x.ffill().bfill())
 
         # Remove countries that contain missing values for whole column
         df.dropna(inplace=True)
