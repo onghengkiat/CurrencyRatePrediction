@@ -42,7 +42,7 @@ export default function Dataset({ setError, setSuccess, setLoading }) {
 
         let response = null
         try {
-          response = await timeoutPromise(15000, fetchDashboardData());
+          response = await timeoutPromise(30000, fetchDashboardData());
         } catch (error) {
           response = BACKEND_SERVER_ERROR;
         }
