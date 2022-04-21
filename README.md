@@ -29,5 +29,5 @@ The website is hosted on <a class="font-weight-bolder" href="https://currency-ex
 
 ## Sample Output
 ---
-![Screenshot from 2022![currencyRatePrediction](https://user-images.githubusercontent.com/55527104/164434375-b56c4b55-2873-4bb2-a876-4fa4148f60d8.png)
+![Screenshot from 2022-04-21 18-18-35](https://user-images.githubusercontent.com/55527104/164434570-d817e321-fcae-4307-a86b-e27123a6ecc9.png)
 ![currencyRatePrediction](https://user-images.githubusercontent.com/55527104/164434420-8c73c9f7-b7df-44d2-9261-ab45726324b3.png)
