@@ -17,14 +17,14 @@ A web application made to perform the analysis about currency exchange rate. Gra
 - View own user profile
 - Admin will be able to view the list of users
 
-**Notes: All of the CRUD operations that could change the data is not implemented yet, because there is no database being maintained for this website. The website will not reflect the changes of the operations once you leave and re-enter the page.
+**Notes: All of the CRUD operations that could change the data is not implemented yet, because there is no database being maintained for this website. The website will not reflect the changes of the operations once you leave and re-enter the page.**
 
 ## User Guide
 ---
 You may refer to the user manual on <a class="font-weight-bolder" href="https://github.com/onghengkiat/CurrencyRatePrediction/blob/main/Documentation/User%20Manual.pdf"> here</a>.
 The website is hosted on <a class="font-weight-bolder" href="https://currency-exchange-rate-fe.herokuapp.com/"> here</a>.
 
-**Notes: The interactions with the application sometimes may not be responding due to the limited resources when using free-tier subscriptions on the Heroku platform which causes the Frontend and Backend servers to be deployed as different servers. This causes the possibility that the Backend server is booting when the HTTP requests are made by the Frontend server. Please try it again after about 20 seconds if any of the actions is not giving a valid response.
+**Notes: The interactions with the application sometimes may not be responding due to the limited resources when using free-tier subscriptions on the Heroku platform which causes the Frontend and Backend servers to be deployed as different servers. This causes the possibility that the Backend server is booting when the HTTP requests are made by the Frontend server. Please try it again after about 20 seconds if any of the actions is not giving a valid response.**
 
 
 ## Sample Output
