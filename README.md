@@ -3,11 +3,12 @@ A web application made to perform the analysis about currency exchange rate. Gra
 
 ## Technologies
 ---
-1) Golang
-2) Javascript
-3) Bootstrap
-4) HTML and CSS
-5) Docker
+1) React
+2) Echart
+3) Python
+4) Flask
+5) Heroku
+6) Bootstrap
 
 ## Scope of Functionalities
 ---
